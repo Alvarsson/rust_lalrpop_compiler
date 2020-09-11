@@ -1,0 +1,162 @@
+use std::str::FromStr;
+
+//säger att vi ska använda allt (*) ur ast.rs modulen
+use crate::ast::*;
+
+grammar;
+
+pub NumOrId : NumOrId = {
+    Num => NumOrId::Num(<>),
+    Id => NumOrId::Id(<>),
+};
+
+pub Expr: Box<Expr> = {
+    Expr ExprOp Factor => Box::new(Expr::Op(<>)),
+    Expr LogicalOp Factor => Box::new(Expr::Op(<>)),
+    Expr RelationOp Factor => Box::new(Expr::Op(<>)),
+    Factor,
+};
+
+ExprOp: Op = {
+    "+" => Op::ADD,
+    "-" => Op::SUB,
+};
+
+LogicalOp: Op = {
+    "&&" => Op::AND,
+    "||" => Op::OR,
+};
+
+RelationOp: Op = {
+    "==" => Op::EQ,
+    "!=" => Op::NEQ,
+    ">" => Op::GTR,
+    "<" => Op::LSS,
+    ">=" => Op::GEQ,
+    "<=" => Op::LEQ,
+};
+
+pub Factor: Box<Expr> = {
+    Factor FactorOp Term => Box::new(Expr::Op(<>)),
+    Term,
+};
+
+FactorOp: Op = {
+    "*" => Op::MUL,
+    "/" => Op::DIV,
+};
+
+pub Term: Box<Expr> = {
+    Num => Box::new(Expr::Number(<>)),
+    Id => Box::new(Expr::Identifier(<>)),
+    "(" <Expr> ")",
+};
+
+Type: Type = {
+    "bool" => Type::Bool,
+    "i32" => Type::I32,
+    "()" => Type::Unit,
+};
+
+Bool: bool = {
+    "true" => true,
+    "false" => false,
+};
+
+
+pub Stmt: Box<Statement> = {
+    Let,
+    ReturnWith,
+    ReturnWithout,
+    Cond,
+    Block,
+    While,
+    Assign,
+    Function,
+    FunctionCall,
+};
+
+//MultStmts: Box<Statement> = {
+//    <mut st:Statement> <opst:Statement?> => match opst {
+//
+//    }
+//}
+
+Let: Box<Statement> = {
+    "let" <id:Id> <opmut:(Bool)?> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opbool:(Bool)?> ";" => Box::new(Statement::Let(id,opmut,atype,opexpr,opbool)),
+};
+
+ReturnWith: Box<Statement> = {
+    "return" <expr:(<Expr>)> ";" => Box::new(Statement::ReturnWith(expr))
+};
+ReturnWithout: Box<Statement> = {
+    <expr:(<Expr>)> => Box::new(Statement::ReturnWithout(expr))
+};
+Block: Box<Statement> = {
+    "{" <Stmt> "}" => Box::new(Statement::Block(<>))
+};
+Cond: Box<Statement> = {
+    "if" <expr:Expr> <block:Block> <opcond:FollowUpCond?> => Box::new(Statement::Cond(AllCond::If, Some(expr),block,opcond))
+};
+
+FollowUpCond: Box<Statement> = {
+    ElseIf,
+    Else,
+};
+
+ElseIf: Box<Statement> = {
+    "else if" <expr:Expr> <block:Block> <opcond:FollowUpCond?> => Box::new(Statement::Cond(AllCond::ElseIf,Some(expr),block,opcond))
+};
+
+Else: Box<Statement> = {
+    "else" <block:Block> => Box::new(Statement::Cond(AllCond::Else,None,block,None))
+};
+
+While: Box<Statement> = {
+    "while" <expr:Expr> <block:Block> => Box::new(Statement::While(expr,block))
+};
+
+Assign: Box<Statement> = {
+    <id:Id> "=" <expr:Expr> => Box::new(Statement::Assign(id,expr))
+};
+
+Function: Box<Statement> = {
+    "fn" <id:Id> "(" <arg:HaveFuncArg> ")" <typ:("->" <Type>)?> <block:Block> => Box::new(Statement::Function(id,arg,typ,block)), //frickin' args
+    "fn" <id:Id> "()" <typ:("->" <Type>)?> <block:Block> => Box::new(Statement::Function(id,vec![],typ,block)), // no args
+};
+
+HaveFuncArg = FuncArguments<FuncArg>;
+
+FuncArguments<arg>: Vec<arg> = {
+    <d:(<arg> ",")*> <ext:arg?> => match ext {
+        Some(ext) => {
+            let mut d = d;
+            d.push(ext);
+            d
+        },
+        None => d,
+
+    }
+};
+
+FuncArg: Box<ArgVariable> = {
+    <id:Id> ":" <typ:Type> => Box::new(ArgVariable::Argument(id,typ))
+};
+
+FunctionCall: Box<Statement> = {
+    <id:Id> "(" <arg:HaveFuncCall> ")" => Box::new(Statement::FunctionCall(id,arg))
+};
+
+HaveFuncCall = FuncArguments<Exprs>;
+
+pub Exprs: Box<Exprs> = {
+    <ex:Expr> => Box::new(Exprs::Expressions(ex))
+}
+
+pub Num: i32 = {
+    r"[-]?[0-9]+" => i32::from_str(<>).unwrap(),
+};
+
+pub Id: String = {
+    r"([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*" => String::from_str(<>).unwrap(),
+};

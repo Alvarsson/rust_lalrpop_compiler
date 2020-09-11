@@ -1,0 +1,10 @@
+{
+    "cSpell.ignoreWords": [
+        "intrinsics",
+        "lalrpop",
+        "lalrpop mod",
+        "llvm",
+        "mod"
+    ],
+    "rust-analyzer.inlayHints.enable": true
+}
