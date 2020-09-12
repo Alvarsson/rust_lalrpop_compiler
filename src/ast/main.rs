@@ -30,19 +30,16 @@ fn parse_number_expr() {
 
 #[test]
 fn parse_let() {
-    assert_eq!(format!("{}", StmtParser::new().parse("
-    let a = 5;
-    let b = 6;
-    ").unwrap()), "
-    let a = 5;
-    let b = 6
-    ");
+    println!("{:?}", StmtParser::new().parse("
+    fn a() {
+        let a = 5;
+        return 6; 
+    }"));
     assert_eq!(format!("{}", StmtParser::new().parse("let _a = 5;").unwrap()), "let _a = 5;");
     assert_eq!(format!("{}", StmtParser::new().parse("let a = true;").unwrap()), "let a = true;");
 }
 #[test]
 fn parse_return() {
-    //println!("{:?}", StmtParser::new().parse("return 4;"));
     assert_eq!(format!("{}", StmtParser::new().parse("return 4;").unwrap()), "return 4;");
     assert_eq!(format!("{}", StmtParser::new().parse("4").unwrap()), "4");
 }
@@ -57,7 +54,7 @@ fn parse_if() {
         "if 5<7 {
             5
         }"
-    ).unwrap()), "if (5 < 7) { 5 }");
+    ).unwrap()), "if (5 < 7) {5}");
 }
 
 #[test]

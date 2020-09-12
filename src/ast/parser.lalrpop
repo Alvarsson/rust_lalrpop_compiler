@@ -10,6 +10,7 @@ pub NumOrId : NumOrId = {
     Id => NumOrId::Id(<>),
 };
 
+//------EXPR------
 pub Expr: Box<Expr> = {
     Expr ExprOp Factor => Box::new(Expr::Op(<>)),
     Expr LogicalOp Factor => Box::new(Expr::Op(<>)),
@@ -17,6 +18,8 @@ pub Expr: Box<Expr> = {
     Factor,
 };
 
+
+//------OP------
 ExprOp: Op = {
     "+" => Op::ADD,
     "-" => Op::SUB,
@@ -36,6 +39,7 @@ RelationOp: Op = {
     "<=" => Op::LEQ,
 };
 
+//------FACTOR------
 pub Factor: Box<Expr> = {
     Factor FactorOp Term => Box::new(Expr::Op(<>)),
     Term,
@@ -46,24 +50,28 @@ FactorOp: Op = {
     "/" => Op::DIV,
 };
 
+//------TERM------
 pub Term: Box<Expr> = {
     Num => Box::new(Expr::Number(<>)),
     Id => Box::new(Expr::Identifier(<>)),
     "(" <Expr> ")",
 };
 
+//------TYPE------
 Type: Type = {
     "bool" => Type::Bool,
     "i32" => Type::I32,
     "()" => Type::Unit,
 };
 
+//------BOOL------
 Bool: bool = {
     "true" => true,
     "false" => false,
 };
 
 
+//------STATEMENT------
 pub Stmt: Box<Statement> = {
     Let,
     ReturnWith,
@@ -76,25 +84,52 @@ pub Stmt: Box<Statement> = {
     FunctionCall,
 };
 
-//MultStmts: Box<Statement> = {
-//    <mut st:Statement> <opst:Statement?> => match opst {
-//
-//    }
-//}
+//pub MultStmts: Box<Statement> = {
+//    <multi:Stmt> => multi,
+//};
 
+
+//------LET------
 Let: Box<Statement> = {
     "let" <id:Id> <opmut:(Bool)?> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opbool:(Bool)?> ";" => Box::new(Statement::Let(id,opmut,atype,opexpr,opbool)),
 };
 
+//Box::new(Statement::Let(id,opmut,atype,opexpr,opbool)),
+
+
+//------RETURN ------
 ReturnWith: Box<Statement> = {
     "return" <expr:(<Expr>)> ";" => Box::new(Statement::ReturnWith(expr))
 };
 ReturnWithout: Box<Statement> = {
     <expr:(<Expr>)> => Box::new(Statement::ReturnWithout(expr))
 };
+
+//------BLOCK------
 Block: Box<Statement> = {
-    "{" <Stmt> "}" => Box::new(Statement::Block(<>))
+    "{" <st:StmtVector> "}" => Box::new(Statement::Block(st))
 };
+
+StmtVector = BlockVector<InBlock>;
+
+InBlock: Box<Statement> = {
+    <st:Stmt> ";" => st,
+};
+
+BlockVector<st>: Vec<st> = {
+    <d:(<st> ";")*> <ext:st?> => match ext {
+        Some(ext) => {
+            let mut d = d;
+            d.push(ext);
+            d
+        },
+        None => d,
+    }
+}
+
+
+
+//------CONDITIONS------
 Cond: Box<Statement> = {
     "if" <expr:Expr> <block:Block> <opcond:FollowUpCond?> => Box::new(Statement::Cond(AllCond::If, Some(expr),block,opcond))
 };
@@ -112,14 +147,18 @@ Else: Box<Statement> = {
     "else" <block:Block> => Box::new(Statement::Cond(AllCond::Else,None,block,None))
 };
 
+
+//------WHILE------
 While: Box<Statement> = {
     "while" <expr:Expr> <block:Block> => Box::new(Statement::While(expr,block))
 };
 
+//------ASSIGN------
 Assign: Box<Statement> = {
     <id:Id> "=" <expr:Expr> => Box::new(Statement::Assign(id,expr))
 };
 
+//------FUNCTION------
 Function: Box<Statement> = {
     "fn" <id:Id> "(" <arg:HaveFuncArg> ")" <typ:("->" <Type>)?> <block:Block> => Box::new(Statement::Function(id,arg,typ,block)), //frickin' args
     "fn" <id:Id> "()" <typ:("->" <Type>)?> <block:Block> => Box::new(Statement::Function(id,vec![],typ,block)), // no args
@@ -135,9 +174,9 @@ FuncArguments<arg>: Vec<arg> = {
             d
         },
         None => d,
-
     }
 };
+//[ ArgVariable("b", "i32"), ArgVariable("c")]
 
 FuncArg: Box<ArgVariable> = {
     <id:Id> ":" <typ:Type> => Box::new(ArgVariable::Argument(id,typ))
@@ -153,6 +192,8 @@ pub Exprs: Box<Exprs> = {
     <ex:Expr> => Box::new(Exprs::Expressions(ex))
 }
 
+
+//------REG------
 pub Num: i32 = {
     r"[-]?[0-9]+" => i32::from_str(<>).unwrap(),
 };

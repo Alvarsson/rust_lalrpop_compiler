@@ -113,7 +113,7 @@ pub enum Statement {
     // if/else/elseif,  op expr,     statementblock,      op statement   
     Cond(AllCond, Option<Box<Expr>>, Box<Statement>, Option<Box<Statement>>),
     //     statement
-    Block(Box<Statement>),
+    Block(Vec<Box<Statement>>),
     //    expr        statementblock
     While(Box<Expr>, Box<Statement>), 
     //      id        expr
@@ -151,7 +151,11 @@ impl fmt::Display for Statement { //Statement with optional
                 write!(f, "{}", expr)?;
             }
             Statement::Block(state)  => {
-                write!(f, "{{{}}}", state)?;
+                write!(f, "{{")?;
+                for st in state.iter(){
+                    write!(f, "{};", st)?;
+                }
+                write!(f, "}}")?;
             } 
             Statement::Cond(cond,opexpr,stmt,opstmt) => {
                 write!(f, "{} ", cond)?;
