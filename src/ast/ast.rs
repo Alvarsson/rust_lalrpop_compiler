@@ -101,6 +101,19 @@ impl fmt::Display for ArgVariable {
         Ok(())
     }
 }
+//TEST
+#[derive(Debug)]
+pub enum Stmts {
+    MulStatement(Box<Statement>),
+}
+impl fmt::Display for Stmts {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Stmts::MulStatement(s) => write!(f, "{}",s)?,
+        }
+        Ok(())
+    }
+}
 
 #[derive(Debug)]
 pub enum Statement {
@@ -113,7 +126,7 @@ pub enum Statement {
     // if/else/elseif,  op expr,     statementblock,      op statement   
     Cond(AllCond, Option<Box<Expr>>, Box<Statement>, Option<Box<Statement>>),
     //     statement
-    Block(Vec<Box<Statement>>),
+    Block(Vec<Box<Stmts>>), //Block(Vec<Box<Statement>>), EDITED
     //    expr        statementblock
     While(Box<Expr>, Box<Statement>), 
     //      id        expr
@@ -152,11 +165,11 @@ impl fmt::Display for Statement { //Statement with optional
                 write!(f, "{}", expr)?;
             }
             Statement::Block(state)  => {
-                write!(f, "{{")?;
+                write!(f, "{{\n")?;
                 for st in state.iter(){
-                    write!(f, "{};", st)?;
+                    write!(f, "        {}\n", st)?;
                 }
-                write!(f, "}}")?;
+                write!(f, "    }}")?;
             } 
             Statement::Cond(cond,opexpr,stmt,opstmt) => {
                 write!(f, "{} ", cond)?;

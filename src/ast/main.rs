@@ -13,12 +13,24 @@ fn main() {
 #[test]
 fn parse_let() {
     println!("{:?}", StmtParser::new().parse("
-    fn a(b:i32, c:i32) {5}
-    ")); 
+    fn a(b:i32, c:i32) {5}")); 
     println!("{:?}", StmtParser::new().parse("
     fn a() {
-        let a = 5; let b = 6;
+        let a = 5;
+        let b = 6;
+        let c = 7;
     }"));
+    assert_eq!(format!("{}", StmtParser::new().parse("
+    fn a() {
+        let a = 5;
+        let b = 6;
+        let c = 7;
+    }").unwrap()), 
+    "fn a() {
+        let a = 5;
+        let b = 6;
+        let c = 7;
+    }");
 }
 
 //#[test]

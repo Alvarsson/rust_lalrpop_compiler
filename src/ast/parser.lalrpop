@@ -5,6 +5,16 @@ use crate::ast::*;
 
 grammar;
 
+match {
+    // The default whitespace skipping is disabled an `ignore pattern` is specified
+    r"\s*" => { }, 
+    // Skip `// comments`
+    r"//[^\n\r]*" => { }, 
+    // Skip `/* comments */`
+    r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { },  
+    _
+}
+
 pub NumOrId : NumOrId = {
     Num => NumOrId::Num(<>),
     Id => NumOrId::Id(<>),
@@ -84,14 +94,22 @@ pub Stmt: Box<Statement> = {
     FunctionCall,
 };
 
-//pub MultStmts: Box<Statement> = {
-//    <multi:Stmt> => multi,
+
+//pub MultStmt: MultStmt = {
+//    <state:(<Stmt> ";")*> <op:Stmt?> => match op {
+//        Some(op) => {
+//            let mut state = state;
+//            state.push(op);
+//            state
+//        },
+//        None => state,
+//    }
 //};
 
 
 //------LET------
 Let: Box<Statement> = {
-    "let" <id:Id> <opmut:(Bool)?> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opbool:(Bool)?> ";" => Box::new(Statement::Let(id,opmut,atype,opexpr,opbool)),
+    "let" <id:Id> <opmut:(Bool)?> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opbool:(Bool)?> => Box::new(Statement::Let(id,opmut,atype,opexpr,opbool)),
 };
 
 //Box::new(Statement::Let(id,opmut,atype,opexpr,opbool)),
@@ -99,21 +117,22 @@ Let: Box<Statement> = {
 
 //------RETURN ------
 ReturnWith: Box<Statement> = {
-    "return" <expr:(<Expr>)> ";" => Box::new(Statement::ReturnWith(expr))
+    "return" <expr:(<Expr>)> => Box::new(Statement::ReturnWith(expr))
 };
 ReturnWithout: Box<Statement> = {
     <expr:(<Expr>)> => Box::new(Statement::ReturnWithout(expr))
 };
 
 //------BLOCK------
-Block: Box<Statement> = {
+Block: Box<Statement> = { // Box<Statement>------------------------>EDITED
     "{" <st:StmtVector> "}" => Box::new(Statement::Block(st))
 };
 
 StmtVector = BlockVector<InBlock>;
 
-InBlock: Box<Statement> = {
-    <st:Stmt> => st,
+InBlock: Box<Stmts> = {
+    <st:Stmt> => Box::new(Stmts::MulStatement(st))
+    //<st:Stmt> => st,
 };
 
 BlockVector<st>: Vec<st> = {
@@ -125,7 +144,7 @@ BlockVector<st>: Vec<st> = {
         },
         None => d,
     }
-}
+};
 
 
 
