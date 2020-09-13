@@ -136,6 +136,7 @@ pub enum Statement {
     // 
     FunctionCall(String, Vec<Box<Exprs>>),
     //
+    Program(Vec<Box<Statement>>),
     
     
 }
@@ -210,7 +211,11 @@ impl fmt::Display for Statement { //Statement with optional
                     }
                 }
             }
-
+            Statement::Program(v) => {
+                for(i,a) in v.iter().enumerate(){
+                    write!(f, "{}",a)?;
+                }
+            }
         };
         Ok(())
     }

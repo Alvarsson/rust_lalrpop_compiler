@@ -15,6 +15,8 @@ match {
     _
 }
 
+
+
 pub NumOrId : NumOrId = {
     Num => NumOrId::Num(<>),
     Id => NumOrId::Id(<>),
@@ -93,19 +95,6 @@ pub Stmt: Box<Statement> = {
     Function,
     FunctionCall,
 };
-
-
-//pub MultStmt: MultStmt = {
-//    <state:(<Stmt> ";")*> <op:Stmt?> => match op {
-//        Some(op) => {
-//            let mut state = state;
-//            state.push(op);
-//            state
-//        },
-//        None => state,
-//    }
-//};
-
 
 //------LET------
 Let: Box<Statement> = {
@@ -219,3 +208,6 @@ pub Num: i32 = {
 pub Id: String = {
     r"([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*" => String::from_str(<>).unwrap(),
 };
+pub Program: Box<Statement> = {
+    Stmt => Box::new(Statement::Program(<>)),
+}
