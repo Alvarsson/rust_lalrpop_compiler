@@ -113,7 +113,7 @@ Block: Box<Statement> = {
 StmtVector = BlockVector<InBlock>;
 
 InBlock: Box<Statement> = {
-    <st:Stmt> ";" => st,
+    <st:Stmt> => st,
 };
 
 BlockVector<st>: Vec<st> = {
@@ -176,7 +176,6 @@ FuncArguments<arg>: Vec<arg> = {
         None => d,
     }
 };
-//[ ArgVariable("b", "i32"), ArgVariable("c")]
 
 FuncArg: Box<ArgVariable> = {
     <id:Id> ":" <typ:Type> => Box::new(ArgVariable::Argument(id,typ))
