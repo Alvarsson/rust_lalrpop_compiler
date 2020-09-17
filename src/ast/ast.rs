@@ -118,11 +118,11 @@ impl fmt::Display for Stmts {
 #[derive(Debug)]
 pub enum Statement {
     //  Name,   opt mutbool,    opt type,      opt expr,       opt type
-    Let(String, Option<bool>, Option<Type>, Option<Box<Expr>>,Option<bool>),
+    Let(String, Option<bool>, Option<Type>, Option<Box<Expr>>,Option<bool>, Option<Box<Statement>>),
     //         expression
     ReturnWith(Box<Expr>),
     //            expression
-    ReturnWithout(Box<Expr>),
+    ReturnWithout(Box<Expr>, Option<Op>, Option<bool>), //, Option<Op>, Option<Box<Expr>>
     // if/else/elseif,  op expr,     statementblock,      op statement   
     Cond(AllCond, Option<Box<Expr>>, Box<Statement>, Option<Box<Statement>>),
     //     statement
@@ -136,7 +136,7 @@ pub enum Statement {
     // 
     FunctionCall(String, Vec<Box<Exprs>>),
     //
-    Program(Vec<Box<Statement>>),
+    //Program(Vec<Box<Statement>>),
     
     
 }
@@ -144,7 +144,7 @@ pub enum Statement {
 impl fmt::Display for Statement { //Statement with optional
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Statement::Let(id, opmut,optype,opexpr,optype2) => {
+            Statement::Let(id, opmut,optype,opexpr,optype2,opCall) => {
                 write!(f, "let {} ", id)?;
                 if let Some(m) = opmut {
                     write!(f, "mut ")?;
@@ -157,6 +157,9 @@ impl fmt::Display for Statement { //Statement with optional
                 }
                 if let Some(typ) = optype2 {
                     write!(f, "= {};", typ)?;
+                }
+                if let Some(call) = opCall {
+                    write!(f, "= {}", call)?;
                 }
             }
             Statement::ReturnWith(expr) => {
@@ -211,24 +214,27 @@ impl fmt::Display for Statement { //Statement with optional
                     }
                 }
             }
-            Statement::Program(v) => {
+            /* Statement::Program(v) => {
                 for(i,a) in v.iter().enumerate(){
                     write!(f, "{}",a)?;
                 }
-            }
+            } */
         };
         Ok(())
     }
 } 
 #[derive(Debug)]
 pub enum Exprs {
-    Expressions(Box<Expr>)
+    Expressions(Box<Expr>),
+    //BoolExp(String, Op, bool)
 }
 impl fmt::Display for Exprs {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Exprs::Expressions(e) => write!(f, "{}", e)
+            Exprs::Expressions(e) => write!(f, "{}", e)?,
+            //Exprs::BoolExp(s,o,b) => write!(f, "{} {} {}",s,o,b )?
         }
+        Ok(())
     }
 }
 
@@ -236,7 +242,10 @@ impl fmt::Display for Exprs {
 pub enum Expr {
     Number(i32),
     Identifier(String),
+    Boolean(bool),
+    FuncCall(Statement),
     Op(Box<Expr>, Op, Box<Expr>),
+    //TypeOp(Box<Expr>, Op, bool),
 
 }
 impl fmt::Display for Expr {
@@ -244,7 +253,9 @@ impl fmt::Display for Expr {
         match self {
             Expr::Number(i) => write!(f, "{}", i)?,
             Expr::Identifier(s) => write!(f, "{}", s)?,
+            Expr::Boolean(b) => write!(f,"{}", b)?,
             Expr::Op(expr,op,expr2) => write!(f, "({} {} {})", expr, op, expr2)?,
+            //Expr::TypeOp(expr,op,t) => write!(f, "({} {} {})", expr, op, t)?,
 
         };
         Ok(())

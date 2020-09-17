@@ -66,6 +66,7 @@ FactorOp: Op = {
 pub Term: Box<Expr> = {
     Num => Box::new(Expr::Number(<>)),
     Id => Box::new(Expr::Identifier(<>)),
+    Bool => Box::new(Expr::Boolean(<>)),
     "(" <Expr> ")",
 };
 
@@ -97,23 +98,21 @@ pub Stmt: Box<Statement> = {
 };
 
 //------LET------
-Let: Box<Statement> = {
-    "let" <id:Id> <opmut:(Bool)?> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opbool:(Bool)?> => Box::new(Statement::Let(id,opmut,atype,opexpr,opbool)),
+Let: Box<Statement> = { //TESTING!!  
+    "let" <id:Id> <opmut:(Bool)?> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opbool:(Bool)?> <opCall:FunctionCall?> => Box::new(Statement::Let(id,opmut,atype,opexpr,opbool,opCall)),
 };
-
-//Box::new(Statement::Let(id,opmut,atype,opexpr,opbool)),
-
 
 //------RETURN ------
 ReturnWith: Box<Statement> = {
     "return" <expr:(<Expr>)> => Box::new(Statement::ReturnWith(expr))
 };
+
 ReturnWithout: Box<Statement> = {
     <expr:(<Expr>)> => Box::new(Statement::ReturnWithout(expr))
 };
 
 //------BLOCK------
-Block: Box<Statement> = { // Box<Statement>------------------------>EDITED
+Block: Box<Statement> = { 
     "{" <st:StmtVector> "}" => Box::new(Statement::Block(st))
 };
 
@@ -121,7 +120,6 @@ StmtVector = BlockVector<InBlock>;
 
 InBlock: Box<Stmts> = {
     <st:Stmt> => Box::new(Stmts::MulStatement(st))
-    //<st:Stmt> => st,
 };
 
 BlockVector<st>: Vec<st> = {
@@ -160,7 +158,7 @@ Else: Box<Statement> = {
 While: Box<Statement> = {
     "while" <expr:Expr> <block:Block> => Box::new(Statement::While(expr,block))
 };
-
+ 
 //------ASSIGN------
 Assign: Box<Statement> = {
     <id:Id> "=" <expr:Expr> => Box::new(Statement::Assign(id,expr))
@@ -196,8 +194,9 @@ FunctionCall: Box<Statement> = {
 HaveFuncCall = FuncArguments<Exprs>;
 
 pub Exprs: Box<Exprs> = {
-    <ex:Expr> => Box::new(Exprs::Expressions(ex))
-}
+    <ex:Expr> => Box::new(Exprs::Expressions(ex)),
+    //<id:Id> <o:LogicalOp> <b:Bool> => Box::new(Exprs::BoolExp(id,o,b)),
+};
 
 
 //------REG------
@@ -208,6 +207,4 @@ pub Num: i32 = {
 pub Id: String = {
     r"([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*" => String::from_str(<>).unwrap(),
 };
-pub Program: Box<Statement> = {
-    Stmt => Box::new(Statement::Program(<>)),
-}
+
