@@ -118,7 +118,7 @@ impl fmt::Display for Stmts {
 #[derive(Debug)]
 pub enum Statement {
     //  Name,   opt mutbool,    opt type,      opt expr,       opt type
-    Let(String, Option<bool>, Option<Type>, Option<Box<Expr>>,Option<bool>),
+    Let(String, bool, Option<Type>, Option<Box<Expr>>,Option<Box<Statement>>),
     //         expression
     ReturnWith(Box<Expr>),
     //            expression
@@ -136,7 +136,6 @@ pub enum Statement {
     // 
     FunctionCall(String, Vec<Box<Exprs>>),
     //
-    Program(Vec<Box<Statement>>),
     
     
 }
@@ -146,7 +145,7 @@ impl fmt::Display for Statement { //Statement with optional
         match self {
             Statement::Let(id, opmut,optype,opexpr,optype2) => {
                 write!(f, "let {} ", id)?;
-                if let Some(m) = opmut {
+                if *opmut {
                     write!(f, "mut ")?;
                 }
                 if let Some(typ) = optype {
@@ -211,11 +210,6 @@ impl fmt::Display for Statement { //Statement with optional
                     }
                 }
             }
-            Statement::Program(v) => {
-                for(i,a) in v.iter().enumerate(){
-                    write!(f, "{}",a)?;
-                }
-            }
         };
         Ok(())
     }
@@ -236,6 +230,9 @@ impl fmt::Display for Exprs {
 pub enum Expr {
     Number(i32),
     Identifier(String),
+    Boolean(bool),
+    NotEx(Op, Box<Expr>),
+    FCall(Statement),
     Op(Box<Expr>, Op, Box<Expr>),
 
 }
@@ -244,6 +241,9 @@ impl fmt::Display for Expr {
         match self {
             Expr::Number(i) => write!(f, "{}", i)?,
             Expr::Identifier(s) => write!(f, "{}", s)?,
+            Expr::Boolean(b) => write!(f, "{}", b)?,
+            Expr::NotEx(not,exp) => write!(f, "{}{}",not,exp)?,
+            Expr::FCall(s) => write!(f,"{}", s)?,
             Expr::Op(expr,op,expr2) => write!(f, "({} {} {})", expr, op, expr2)?,
 
         };

@@ -18,7 +18,8 @@ fn main() {
             } else {
                 x && false
             }
-        }
+        } 
+        //CHECK
     
         // a function taking two bool arguments returning the i32 type
         // with some let statements and function calls
@@ -37,6 +38,7 @@ fn main() {
             };
             b + 3
         }
+        //CHECK
     
         // a function taking two bool arguments returning the i32 type
         // while
@@ -49,30 +51,23 @@ fn main() {
             c
         }
     }";
-    println!("{:?}", ProgramParser::new().parse(tester));
+    //println!("{:?}", ProgramParser::new().parse(tester));
 }
 
 #[test]
 fn parse_let() {
     println!("{:?}", StmtParser::new().parse("
-    fn a(b:i32, c:i32) {5}")); 
+    !(x && false)"));
     println!("{:?}", StmtParser::new().parse("
-    fn a() {
-        let a = 5;
-        let b = 6;
-        let c = 7;
-    }"));
-    assert_eq!(format!("{}", StmtParser::new().parse("
-    fn a() {
-        let a = 5;
-        let b = 6;
-        let c = 7;
-    }").unwrap()), 
-    "fn a() {
-        let a = 5;
-        let b = 6;
-        let c = 7;
-    }");
+    fn c(x: bool, y: bool) -> i32 {
+        let mut b: i32 = 0;
+        let mut c: i32 = 1;
+        while (b < 10) {
+            c = c * 2;
+        };
+        c
+    }" 
+));
 }
 #[test]
 fn _let_and_return() {

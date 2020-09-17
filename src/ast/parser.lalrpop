@@ -15,8 +15,6 @@ match {
     _
 }
 
-
-
 pub NumOrId : NumOrId = {
     Num => NumOrId::Num(<>),
     Id => NumOrId::Id(<>),
@@ -27,8 +25,10 @@ pub Expr: Box<Expr> = {
     Expr ExprOp Factor => Box::new(Expr::Op(<>)),
     Expr LogicalOp Factor => Box::new(Expr::Op(<>)),
     Expr RelationOp Factor => Box::new(Expr::Op(<>)),
+    //NotExp Expr => Box::new(Expr::NotExpression(<>))
     Factor,
 };
+
 
 
 //------OP------
@@ -51,8 +51,12 @@ RelationOp: Op = {
     "<=" => Op::LEQ,
 };
 
+Not: Op = {
+    "!" => Op::NOT,
+};
+
 //------FACTOR------
-pub Factor: Box<Expr> = {
+pub Factor: Box<Expr> = { //
     Factor FactorOp Term => Box::new(Expr::Op(<>)),
     Term,
 };
@@ -66,6 +70,9 @@ FactorOp: Op = {
 pub Term: Box<Expr> = {
     Num => Box::new(Expr::Number(<>)),
     Id => Box::new(Expr::Identifier(<>)),
+    Bool => Box::new(Expr::Boolean(<>)),
+    <Not> <Term> => Box::new(Expr::NotEx(<>)),
+    //<FunctionCall> => Box::new(Expr::FCall(<>)),
     "(" <Expr> ")",
 };
 
@@ -97,12 +104,11 @@ pub Stmt: Box<Statement> = {
 };
 
 //------LET------
-Let: Box<Statement> = {
-    "let" <id:Id> <opmut:(Bool)?> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opbool:(Bool)?> => Box::new(Statement::Let(id,opmut,atype,opexpr,opbool)),
+Let: Box<Statement> = { //  <opcall:FunctionCall?> <opcall:FunctionCall?> 
+    "let" "mut" <id:Id> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opcall:FunctionCall?> => Box::new(Statement::Let(id,true,atype,opexpr,opcall)),
+
+    "let" <id:Id> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opcall:FunctionCall?> => Box::new(Statement::Let(id,false,atype,opexpr,opcall)),
 };
-
-//Box::new(Statement::Let(id,opmut,atype,opexpr,opbool)),
-
 
 //------RETURN ------
 ReturnWith: Box<Statement> = {
@@ -113,7 +119,7 @@ ReturnWithout: Box<Statement> = {
 };
 
 //------BLOCK------
-Block: Box<Statement> = { // Box<Statement>------------------------>EDITED
+Block: Box<Statement> = { 
     "{" <st:StmtVector> "}" => Box::new(Statement::Block(st))
 };
 
@@ -121,17 +127,16 @@ StmtVector = BlockVector<InBlock>;
 
 InBlock: Box<Stmts> = {
     <st:Stmt> => Box::new(Stmts::MulStatement(st))
-    //<st:Stmt> => st,
 };
 
 BlockVector<st>: Vec<st> = {
     <d:(<st> ";")*> <ext:st?> => match ext {
+        None => d,
         Some(ext) => {
             let mut d = d;
             d.push(ext);
             d
-        },
-        None => d,
+        } 
     }
 };
 
@@ -208,6 +213,4 @@ pub Num: i32 = {
 pub Id: String = {
     r"([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*" => String::from_str(<>).unwrap(),
 };
-pub Program: Box<Statement> = {
-    Stmt => Box::new(Statement::Program(<>)),
-}
+
