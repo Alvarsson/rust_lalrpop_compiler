@@ -67,6 +67,7 @@ pub Term: Box<Expr> = {
     Num => Box::new(Expr::Number(<>)),
     Id => Box::new(Expr::Identifier(<>)),
     Bool => Box::new(Expr::Boolean(<>)),
+    FuncCall => Box::new(Expr::FCall)
     "(" <Expr> ")",
 };
 

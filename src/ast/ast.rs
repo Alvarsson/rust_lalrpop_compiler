@@ -254,6 +254,7 @@ impl fmt::Display for Expr {
             Expr::Number(i) => write!(f, "{}", i)?,
             Expr::Identifier(s) => write!(f, "{}", s)?,
             Expr::Boolean(b) => write!(f,"{}", b)?,
+            Expr::FuncCall()
             Expr::Op(expr,op,expr2) => write!(f, "({} {} {})", expr, op, expr2)?,
             //Expr::TypeOp(expr,op,t) => write!(f, "({} {} {})", expr, op, t)?,
 
