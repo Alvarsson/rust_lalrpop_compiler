@@ -6,6 +6,7 @@ pub enum NumOrId {
     Num(i32),
     Id(String),
 }
+pub type Id = String;
 impl fmt::Display for NumOrId {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
