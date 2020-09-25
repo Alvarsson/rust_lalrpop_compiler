@@ -8,7 +8,7 @@ pub enum Exprs {
     Id(String),
     NotOp(Op, Box<Exprs>),
     Op(Box<Exprs>, Op, Box<Exprs>),
-    FunctionCall(String, Vec<Box<Exprs>>), // Uuuhh FUNKAR INTE!! Ambiguity prob...
+    FunctionCall(String, Vec<Box<Exprs>>), // Uuuhh FUNKAR INTE!! Ambiguity prob... lööst
 }
 
 impl fmt::Display for Exprs {
@@ -185,7 +185,10 @@ impl fmt::Display for AllCond {
         Ok(())
     }
 }
+#[derive(Debug)]
+pub enum Error {
 
+}
 
 
 /*
