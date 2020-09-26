@@ -4,8 +4,6 @@ use std::str::FromStr;
 use crate::ast::*;
 
 grammar;
-
-//----CommentFix----
 match {
     // The default whitespace skipping is disabled an `ignore pattern` is specified
     r"\s*" => { }, 
@@ -13,8 +11,53 @@ match {
     r"//[^\n\r]*" => { }, 
     // Skip `/* comments */`
     r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { },  
+    "i32",
+    "bool",
+    "{",
+    "}",
+    "()",
+    "(",
+    ")",
+    ";",
+    "-",
+    "+",
+    "*",
+    "/",
+    ",",
+    "!",
+    "&&",
+    "||",
+    "==",
+    "=",
+    "<",
+    ">",
+    ":",
+    "true",
+    "false",
+    "fn",
+    "while",
+    "if",
+    "else",
+    "else if",
+    "return",
+    "let",
+    "mut",
+    r"[0-9]+",
+    r"([a-z_]|[A-Z])([a-z]|[A-Z]|[0-9]|_)*",
+    "->",
     _
 }
+
+//----CommentFix----
+//match {
+//    // The default whitespace skipping is disabled an `ignore pattern` is specified
+//    r"\s*" => { }, 
+//    // Skip `// comments`
+//    r"//[^\n\r]*" => { }, 
+//    // Skip `/* comments */`
+//    r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { },  
+//    _
+//}
 
 //------REG------
 pub Num: i32 = {
