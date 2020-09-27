@@ -16,7 +16,7 @@ fn parse_let() {
     println!("{:?}", StmtsParser::new().parse("
     // a function taking two bool arguments returning the bool type
     // with some let statements and function calls
-    fn a (x: bool, y: bool) -> bool {
+    fn a(x: bool, y: bool) -> bool {
         if x && y {
             let a: bool = true;
             y || a
@@ -26,7 +26,7 @@ fn parse_let() {
     } 
     "));
     println!("{:?}", StmtsParser::new().parse("
-    fn b (x: bool, y: bool) -> i32 {
+    fn b(x: bool, y: bool) -> i32 {
         let a: bool = a(x, y || false);
         let mut b: i32 = 0;
         if a && y {
@@ -45,7 +45,7 @@ fn parse_let() {
     println!("{:?}", StmtsParser::new().parse("
     // a function taking two bool arguments returning the i32 type
     // while
-    fn c (x: bool, y: bool) -> i32 {
+    fn c(x: bool, y: bool) -> i32 {
         let mut b: i32 = 0;
         let mut c: i32 = 1;
         while (b < 10) {

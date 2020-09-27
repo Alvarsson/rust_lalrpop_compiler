@@ -91,7 +91,7 @@ impl fmt::Display for Type {
 pub enum Statement {
     Let(bool, String, Option<Type>, Option<Box<Exprs>>),
     Cond(AllCond, Option<Box<Exprs>>, Box<Statement>, Option<Box<Statement>>),
-    Block(Vec<Box<Statement>>),
+    Block(Vec<Box<Statement>>, Option<Box<Statement>>),
     While(Box<Exprs>, Box<Statement>),
     Assign(String, Box<Exprs>),
     Return(Box<Exprs>),
@@ -118,13 +118,16 @@ impl fmt::Display for Statement { //Statement with optional
             Statement::Return(expr) => {
                 write!(f, "{}", expr)?;
             }
-            Statement::Block(state)  => {
+            Statement::Block(state,r)  => {
                 write!(f, "{{\n")?;
                 for (i,stmt) in state.iter().enumerate(){
                     write!(f, "        {}\n", stmt)?;
                     if i <state.len()-1 {
                         write!(f, ";\n")?;
                     }
+                }
+                if let Some(ret) = r {
+                    write!(f, "{}",ret)?;
                 }
                 write!(f, "    }}")?;
             } 

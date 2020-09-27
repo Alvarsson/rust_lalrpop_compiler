@@ -65,12 +65,12 @@ pub Num: i32 = {
 };
 
 pub Id: String = {
-    r"([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*" => String::from_str(<>).unwrap(),
+    r"([a-z_]|[A-Z])([a-z]|[A-Z]|[0-9]|_)*" => String::from_str(<>).unwrap(),
 };
 
-pub FuncIdent: String = {
-    r"([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*\(" => String::from_str(<>).unwrap(),
-};
+//pub FuncIdent: String = {
+//    r"([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*\(" => String::from_str(<>).unwrap(),
+//};
 
 pub Bool: bool = {
     "true" => true,
@@ -96,10 +96,10 @@ pub Factor: Box<Exprs> = {
 };
 
 pub Term: Box<Exprs> = { 
+    FunctionCall,
     Bool => Box::new(Exprs::Boolean(<>)),
     Num => Box::new(Exprs::Number(<>)),
     Id => Box::new(Exprs::Id(<>)),
-    FunctionCall,
     "(" <Exprs> ")",
 };
 
@@ -141,17 +141,17 @@ Type: Type = {
 
 pub Stmt: Box<Statement> = {
     //Exprs => Box::new(Statement::Exprs(<>)),
-    Let,
-    Cond,
-    While,
-    Assign,
-    Return,
-    Function,
+    <Let> ";",
+    <Cond> ";"?,
+    <While> ";"?,
+    <Assign> ";",
+    //<Return> ";", //Fix with optional return at block end. For implicit returns.
+    <Function> ";"?,
     
 };
 
 pub Stmts: Box<Statement> = {
-    <vec_s: Stmt> ";"* => vec_s,
+    <vec_s: Stmt> => vec_s,
 }
 
 Let: Box<Statement> = {
@@ -177,7 +177,7 @@ Else: Box<Statement> = {
 };
 
 Block: Box<Statement> = {
-    "{" <st: Stmts*> "}" => Box::new(Statement::Block(st))
+    "{" <st: Stmt*>  <r:Return?>"}" => Box::new(Statement::Block(st,r))
 };
 
 While: Box<Statement> = {
@@ -189,7 +189,8 @@ Assign: Box<Statement> = {
 };
 
 Return: Box<Statement> = {
-    <Exprs> => Box::new(Statement::Return(<>)) 
+    <Exprs> => Box::new(Statement::Return(<>)),
+    "return" <Exprs> ";"? => Box::new(Statement::Return(<>)), 
 };
 
 // -----Functions----
@@ -216,6 +217,6 @@ FuncArg: Box<Statement> = {
 };
 
 FunctionCall: Box<Exprs> = { //Ful-lösning med FuncIdent
-     <id:FuncIdent> <mac:CallMacro> ")" => Box::new(Exprs::FunctionCall(id,mac))
+     <id:Id> "(" <mac:CallMacro> ")" => Box::new(Exprs::FunctionCall(id,mac))
 };
 CallMacro = FuncArgSep<Exprs>;
