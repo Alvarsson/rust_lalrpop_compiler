@@ -8,15 +8,15 @@ use crate::ast::*;
 //      Hashmaps is recommended so go with that. Maybe maps x2?
 
 type Error = String;
-#[test]
-fn expr_check(expr: Box<Exprs>) -> Result<Type, Error> {
+
+fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
     match *expr {
         ast::Exprs::Boolean(_) => Ok(ast::Type::Bool),
         ast::Exprs::Number(_) => Ok(ast::Type::I32),
-        ast::Exprs::Id(_) => Ok(ast::Type::Bool), //För att kunna testa vidare.
+        ast::Exprs::Id(id) => scope.get_symbol(&id), // Go through depending on type. This means early reterun though.
         ast::Exprs::Op(e1,o,e2) => {
-            let recurExpr1 = expr_check(e1);
-            let recurExpr2 = expr_check(e2);
+            let recurExpr1 = expr_check(e1, scope);
+            let recurExpr2 = expr_check(e2, scope);
             if recurExpr1.is_err() {
                 return recurExpr1;
             }
@@ -83,16 +83,19 @@ fn expr_check(expr: Box<Exprs>) -> Result<Type, Error> {
         },
         ast::Exprs::FunctionCall(id, expressions) => {
             let mut arguments = vec![]; //instansiate an empty vector for arguments.
-            for expr in expressions { // för varje argument måste vi kolla expr_check.
-                let rec = expr_check(expr);
-                if r.is_err() {
-                    return rec;
+            for expr in expressions { // expr_check for each expr.
+                let recur = expr_check(expr);
+                if recur.is_err() {
+                    return recur;
                 } 
-                else {
-                    arguments.push(rec.unwrap()); // add the argument unwraped
-                }
+                arguments.push(recur.unwrap()); //Push values into vector.
             }
-            //NEED SCOPE HERE!
+            //Check that function is is this scope.
+            let fScope = scope.get_func(&id, arguments);
+            if fScope.is_err() {
+                Err(format!("Function, {} not in this scope", fScope))
+            }
+            Ok(fScope.unwrap())
         },
         _ => Err(format!("Expression {:?} not checkable", *expr)),
     }
@@ -123,10 +126,69 @@ pub fn if_else_check(stmt: Box<ast::Statement>) -> Result<ast::Type, Error> {
     }
     
 }
-pub fn block_check(block: Box<ast::Statement>) -> Result<ast::Type, Error> {
+pub fn block_check(block: Box<ast::Statement>, scope: &mut Scope) -> Result<ast::Type, Error> {
     //Will need scope...need to do that before block.
+
+    //First we enter block, ie go into new scope
+    scope.addLayer();
+
+    let opReturn = match *block {
+        ast::Statement::Block(stmt, Some(ret)) => { //with  return
+            //check that only statements are in the scope with the type of expl/impl return
+        },
+        ast::Statement::Block(stmt, None) => { //No implicit/explicit return
+            //need only recurse to statement check.
+        }
+    };
+    
+
+    
+
+
+    //check the returntype against the function explicit return
+
+    //Exit scope layer when block finished.
+    scope.backLayer();
+
+
     
 }
+
+pub fn function_check() -> Result<ast::Type, Error> {
+
+
+    //The return statement should check against the block check...
+
+}
+
+pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<ast::Type, Error> {
+    for stmt in stmts {
+        match *stmt {
+            ast::Statement::Assign(id, ex) => {
+                let sAssign = scope.get_symbol(&id);
+                if sAssign.is_err() {
+                    sAssign
+                } // cant oneline since it will panic at err.
+                else {
+                    let s2Assign = expr_check(ex, scope);
+                    if s2Assign.is_err() {
+                        s2Assign
+                    }
+                    Ok(ast::Type::Unit)
+                }
+            },
+            ast::Statement::While(ex, block) => {
+                //First check expression 
+                //then check 
+            }
+
+        }
+    }
+}
+
+
+
+
 
 pub struct Scope {
     scope_layer: i32, // Scope Layer identification
@@ -163,10 +225,15 @@ impl Scope {
         let scope_layer = self.table.get_mut(&self.scope_layer).unwrap();
         scope_layer.insert(id.to_string(), SignatureType{args: args, ret: ret});
     }
-    fn register_symbol(&mut self, id: &String, ret: ast::Type) {
+    fn register_symbol(&mut self, id: &String, ret: ast::Type) { // Add symbol, this will make shadowing/borrow possible aswell
         let scope_layer = self.symbolTable.get_mut(&self.scope_layer).unwrap();
         scope_layer.insert(id.to_string(), SignatureType{args: args, ret: ret});
     }
+
+
+
+
+
     fn get_symbol(&mut self, id: &String) -> Result<ast::Type, Error> { //Check variable in scope.
         let mut currentSymbol = self.scope_layer;
         while currentSymbol >= 0 {
@@ -178,6 +245,12 @@ impl Scope {
         }
         Err(format!("Symbol, {:?} not i scope", id))
     }
+
+
+
+
+
+
     fn get_func(&mut self, id: &String, args: Vec<ast::Type>) -> Result<ast::Type, Error> {
         let mut currentfunc = self.scope_layer;
         while currentfunc >= 0 {
