@@ -1,14 +1,14 @@
 
 use std::collections::HashMap;
 
-use crate::ast::*;
+use crate::ast;
 //TODO: Fix check for Id in expr_check.
 //TODO: I'll need something, maybe a struct, for scope handling!
 //      Hashmaps is recommended so go with that. Maybe maps x2?
 
 type Error = String;
 
-fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
+fn expr_check(expr: Box<ast::Exprs>, scope: &mut Scope) -> Result<ast::Type, Error> {
     match *expr {
         ast::Exprs::Boolean(_) => Ok(ast::Type::Bool),
         ast::Exprs::Number(_) => Ok(ast::Type::I32),
@@ -45,13 +45,13 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
                 },
                 ast::Op::Eq => {
                     if type1 == type2 {
-                        Ok(ast::Type::Bool)
+                        return Ok(ast::Type::Bool)
                     }
                     return Err(format!("Could not do {:?} for types {:?} and {:?}", o, e1,e2))
                 },
                 ast::Op::Neq => {
                     if type1 != type2 {
-                        Ok(ast::Type::Bool)
+                        return Ok(ast::Type::Bool)
                     }
                     return Err(format!("Could not do {:?} for types {:?} and {:?}", o, e1,e2))
                 },

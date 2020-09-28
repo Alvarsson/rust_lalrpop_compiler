@@ -5,7 +5,7 @@ lalrpop_mod!(pub parser, "/ast/parser.rs");
 use parser::*;
 
 pub mod ast;
-use ast::*;
+pub mod type_check;
 
 fn main() {
     println!("minimal");
