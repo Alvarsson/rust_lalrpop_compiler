@@ -1,14 +1,14 @@
 
 use std::collections::HashMap;
 
-use crate::ast;
+use crate::ast::*;
 //TODO: Fix check for Id in expr_check.
 //TODO: I'll need something, maybe a struct, for scope handling!
 //      Hashmaps is recommended so go with that. Maybe maps x2?
 
 type Error = String;
 
-fn expr_check(expr: Box<ast::Exprs>, scope: &mut Scope) -> Result<ast::Type, Error> {
+fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
     match *expr {
         Exprs::Boolean(_) => Ok(Type::Bool),
         Exprs::Number(_) => Ok(Type::I32),
@@ -45,21 +45,13 @@ fn expr_check(expr: Box<ast::Exprs>, scope: &mut Scope) -> Result<ast::Type, Err
                 },
                 Op::Eq => {
                     if type1 == type2 {
-<<<<<<< HEAD
-                        return Ok(ast::Type::Bool)
-=======
-                        Ok(Type::Bool)
->>>>>>> 2074c39bba5ce2a25d6625aaf2fae2a021db9713
+                        return Ok(Type::Bool)
                     }
                     return Err(format!("Could not do {:?} for types {:?} and {:?}", o, e1,e2))
                 },
                 Op::Neq => {
                     if type1 != type2 {
-<<<<<<< HEAD
-                        return Ok(ast::Type::Bool)
-=======
-                        Ok(Type::Bool)
->>>>>>> 2074c39bba5ce2a25d6625aaf2fae2a021db9713
+                        return Ok(Type::Bool)
                     }
                     return Err(format!("Could not do {:?} for types {:?} and {:?}", o, e1,e2))
                 },
@@ -100,7 +92,8 @@ fn expr_check(expr: Box<ast::Exprs>, scope: &mut Scope) -> Result<ast::Type, Err
             //Check that function is is this scope.
             let fScope = scope.get_func(&id, arguments);
             if fScope.is_err() {
-                Err(format!("Function, {} not in this scope", fScope))
+                return fScope;
+                //Err(format!("Function, {} not in this scope", fScope))
             }
             Ok(fScope.unwrap())
         },
@@ -235,7 +228,7 @@ struct SignatureType { // either an argument or return
 }
 
 impl Scope {
-    fn newScope(&mut self) -> Scope {
+    fn newScope(src: String) -> Scope {
         let mut s = Scope{scope_layer: 0, table: HashMap::new(), symbolTable: HashMap::new(), src: src};
         s.table.insert(0, HashMap::new()); //new layer of hashmap to track next layer.
         s.symbolTable.insert(0, HashMap::new());
@@ -253,13 +246,13 @@ impl Scope {
         self.table.remove(&self.scope_layer);
         self.scope_layer -= 1;
     }
-    fn register(&mut self, id: &String, args: Vec<::Type>, ret: Type) {
+    fn register(&mut self, id: &String, args: Vec<Type>, ret: Type) {
         let scope_layer = self.table.get_mut(&self.scope_layer).unwrap();
-        scope_layer.insert(id.to_string(), SignatureType{arg: arg, retur: retur});
+        scope_layer.insert(id.to_string(), SignatureType{arg: args, retur: ret});
     }
-    fn register_symbol(&mut self, id: &String, ret: Type) { // Add symbol, this will make shadowing/borrow possible aswell
+    fn register_symbol(&mut self, id: &String, retur: Type) { // Add symbol, this will make shadowing/borrow possible aswell
         let scope_layer = self.symbolTable.get_mut(&self.scope_layer).unwrap();
-        scope_layer.insert(id.to_string(), SignatureType{arg: arg, retur: retur});
+        scope_layer.insert(id.to_string(),retur);
     }
 
 
@@ -289,9 +282,9 @@ impl Scope {
             let scope_layer = self.table.get(&currentfunc).unwrap();
             if scope_layer.contains_key(id) {
                 let sign = scope_layer.get(id).unwrap();
-                let matchset = args.iter().zip(sign.args.iter()).filter(|&(a,b)| a == b).count();
-                if matchset == args.len() && matchset == sign.args.len() {
-                    return Ok(sign.ret);
+                let matchset = args.iter().zip(sign.arg.iter()).filter(|&(a,b)| a == b).count();
+                if matchset == args.len() && matchset == sign.arg.len() {
+                    return Ok(sign.retur);
                 }
             }
             currentfunc -= 1;
