@@ -1,7 +1,7 @@
 // ast
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub enum Exprs {
     Boolean(bool),
     Number(i32),
@@ -33,7 +33,7 @@ impl fmt::Display for Exprs {
     }
 } 
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub enum Op {
     Add,
     Sub,
@@ -70,7 +70,7 @@ impl fmt::Display for Op {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub enum Type {
     I32,
     Bool,
@@ -87,7 +87,7 @@ impl fmt::Display for Type {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub enum Statement {
     Let(bool, String, Option<Type>, Option<Box<Exprs>>),
     Cond(AllCond, Option<Box<Exprs>>, Box<Statement>, Option<Box<Statement>>),
@@ -172,7 +172,7 @@ impl fmt::Display for Statement { //Statement with optional
     }
 } 
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub enum AllCond {
     If,
     Else,

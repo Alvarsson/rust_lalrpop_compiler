@@ -45,13 +45,13 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
                 },
                 Op::Eq => {
                     if type1 == type2 {
-                        Ok(Type::Bool)
+                        return Ok(Type::Bool)
                     }
                     return Err(format!("Could not do {:?} for types {:?} and {:?}", o, e1,e2))
                 },
                 Op::Neq => {
                     if type1 != type2 {
-                        Ok(Type::Bool)
+                        return Ok(Type::Bool)
                     }
                     return Err(format!("Could not do {:?} for types {:?} and {:?}", o, e1,e2))
                 },
@@ -92,7 +92,7 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
             //Check that function is is this scope.
             let fScope = scope.get_func(&id, arguments);
             if fScope.is_err() {
-                Err(format!("Function, {} not in this scope", fScope))
+                return Err(format!("Function, {} not in this scope", fScope))
             }
             Ok(fScope.unwrap())
         },
