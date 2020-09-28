@@ -48,16 +48,6 @@ match {
     _
 }
 
-//----CommentFix----
-//match {
-//    // The default whitespace skipping is disabled an `ignore pattern` is specified
-//    r"\s*" => { }, 
-//    // Skip `// comments`
-//    r"//[^\n\r]*" => { }, 
-//    // Skip `/* comments */`
-//    r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { },  
-//    _
-//}
 
 //------REG------
 pub Num: i32 = {
@@ -96,10 +86,10 @@ pub Factor: Box<Exprs> = {
 };
 
 pub Term: Box<Exprs> = { 
-    FunctionCall,
     Bool => Box::new(Exprs::Boolean(<>)),
     Num => Box::new(Exprs::Number(<>)),
     Id => Box::new(Exprs::Id(<>)),
+    FunctionCall,
     "(" <Exprs> ")",
 };
 

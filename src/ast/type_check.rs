@@ -1,5 +1,4 @@
 
-use log::trace;
 use std::collections::HashMap;
 
 use crate::ast::*;
@@ -60,7 +59,7 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
             }
         },
         ast::Exprs::NotOp(ast::Op::Not ,e) => {
-            let recEx1 = expr_check(e);
+            let recEx1 = expr_check(e, scope);
             if recEx1.is_err() {
                 return recEx1;
             }
@@ -71,7 +70,7 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
             return Err(format!("Expression {:?} do not support !", typ));
         },
         ast::Exprs::NotOp(ast::Op::Sub, e) => {
-            let recEx1 = expr_check(e);
+            let recEx1 = expr_check(e, scope);
             if recEx1.is_err() {
                 return recEx1;
             }
@@ -84,7 +83,7 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
         ast::Exprs::FunctionCall(id, expressions) => {
             let mut arguments = vec![]; //instansiate an empty vector for arguments.
             for expr in expressions { // expr_check for each expr.
-                let recur = expr_check(expr);
+                let recur = expr_check(expr, scope);
                 if recur.is_err() {
                     return recur;
                 } 
@@ -102,10 +101,10 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
 }
 
 //For checking the if, else if, and else statement conditionals.
-pub fn if_else_check(stmt: Box<ast::Statement>) -> Result<ast::Type, Error> {
+pub fn if_else_check(stmt: Box<ast::Statement>, scope: &mut Scope) -> Result<ast::Type, Error> {
     match *stmt {
         ast::Statement::Cond(ast::AllCond::If, Some(e), block, None) => {
-            let rec = expr_check(e);
+            let rec = expr_check(e, scope);
             if rec.is_err() {
                 Err(format!("Incorrect if statement, {:?}", rec))
             }
@@ -114,7 +113,7 @@ pub fn if_else_check(stmt: Box<ast::Statement>) -> Result<ast::Type, Error> {
             }
         },
         ast::Statement::Cond(ast::AllCond::ElseIf, Some(e), block, Some(st)) => {
-            let rec = expr_check(e);
+            let rec = expr_check(e, scope);
             if rec.is_err() {
                 Err(format!("Incorrect else if statement, {:?}", rec))
             }
@@ -179,8 +178,33 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
             },
             ast::Statement::While(ex, block) => {
                 //First check expression 
-                //then check 
-            }
+                let testEx = expr_check(ex);
+                if testEx.is_err() {
+                    testEx
+                }
+                else {
+                    let typ = testEx.unwrap();
+                    if typ == ast::Type::Bool {
+                        let testBlock = block_check(block, scope);
+                        if testBlock.is_err() {
+                            testBlock
+                        }
+                        else {
+                            let typ2 = testBlock.unwrap();//should be unit for block unless return
+                            if typ2 == ast::Type::Unit {
+                                Ok(ast::Type::Unit)
+                            }
+                            else {
+                                Err(format!("Not a Unit return, instead got: {}", typ2))
+                            }
+                        }
+                    }
+                    else {
+                        Err(format!("Not a Bool, instead got: {}", typ))
+                    }
+                }
+            },
+            ast::Statement::Let(m,id,)
 
         }
     }
@@ -192,8 +216,8 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
 
 pub struct Scope {
     scope_layer: i32, // Scope Layer identification
-    table: HashMap<i32, HashMap<String, SignatureType>, //Two maps with the signature type in one.
-    symbolTable: HashMap<i32, HashMap<String, ast::Type>,
+    table: HashMap<i32, HashMap<String, SignatureType>>, //Two maps with the signature type in one.
+    symbolTable: HashMap<i32, HashMap<String, ast::Type>>,
     src: String,
 }
 
@@ -204,7 +228,7 @@ struct SignatureType { // either an argument or return
 
 impl Scope {
     fn newScope(&mut self) -> Scope {
-        let mut s = Scope{table: HashMap::new(), scope_layer: 0, src: src};
+        let mut s = Scope{scope_layer: 0, table: HashMap::new(), symbolTable: HashMap::new(), src: src};
         s.table.insert(0, HashMap::new()); //new layer of hashmap to track next layer.
         s.symbolTable.insert(0, HashMap::new());
         s
@@ -223,11 +247,11 @@ impl Scope {
     }
     fn register(&mut self, id: &String, args: Vec<::ast::Type>, ret: ast::Type) {
         let scope_layer = self.table.get_mut(&self.scope_layer).unwrap();
-        scope_layer.insert(id.to_string(), SignatureType{args: args, ret: ret});
+        scope_layer.insert(id.to_string(), SignatureType{arg: arg, retur: retur});
     }
     fn register_symbol(&mut self, id: &String, ret: ast::Type) { // Add symbol, this will make shadowing/borrow possible aswell
         let scope_layer = self.symbolTable.get_mut(&self.scope_layer).unwrap();
-        scope_layer.insert(id.to_string(), SignatureType{args: args, ret: ret});
+        scope_layer.insert(id.to_string(), SignatureType{arg: arg, retur: retur});
     }
 
 
