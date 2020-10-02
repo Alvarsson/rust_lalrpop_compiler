@@ -1,5 +1,6 @@
 
 use std::collections::HashMap;
+use std::any::type_name;
 
 use crate::ast::*;
 //TODO: Fix check for Id in expr_check.
@@ -8,11 +9,15 @@ use crate::ast::*;
 
 type Error = String;
 
+fn type_of(_: T) -> &'static str {
+    type_name
+}
+
 fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
     match *expr {
         Exprs::Boolean(_) => Ok(Type::Bool),
         Exprs::Number(_) => Ok(Type::I32),
-        Exprs::Id(id) => scope.get_symbol(&id), // Go through depending on type. This means early reterun though.
+        Exprs::Id(id) => scope.get_symbol(&id), // Go through depending on type. This means early return though.
         Exprs::Op(e1,o,e2) => {
             let recurExpr1 = expr_check(e1, scope);
             let recurExpr2 = expr_check(e2, scope);
@@ -121,6 +126,9 @@ pub fn if_else_check(stmt: Box<Statement>, scope: &mut Scope) -> Result<Type, Er
             else {
                 //TODO: Block type check... ill need that everywhere so ill do it now.
             }
+        },
+        Statement::Cond(AllCond::Else,) => {
+
         }
 
     }
@@ -140,10 +148,6 @@ pub fn block_check(block: Box<Statement>, scope: &mut Scope) -> Result<Type, Err
             //need only recurse to statement check.
         }
     };
-    
-
-    
-
 
     //check the returntype against the function explicit return
 
@@ -168,7 +172,7 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 let sAssign = scope.get_symbol(&id);
                 if sAssign.is_err() {
                     sAssign
-                } // cant oneline since it will panic at err.
+                } // cant one-line since it will panic at err.
                 else {
                     let s2Assign = expr_check(ex, scope);
                     if s2Assign.is_err() {
@@ -205,10 +209,44 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                     }
                 }
             },
-            Statement::Let(m,id,)
+            Statement::Let(m,id,opT,opE) => {
+                if let Some(t) = opT && type_of(id) == String {
+                    if let Some(testExp) = opE {
+                        let e = expr_check(testExp, scope);
+                        if e.is_err() {
+                            e
+                        }
+                        else {
+                            let typ = e.unwrap();
+                            if typ == Type {
+                                register_symbol(&id, typ); // register that variable to that type.
+                                Ok(Type::Unit)
+                            }
+                        }
+                    }
+                }
+                else {
+                    Err(format!("Error at let statement"))
+                }
+
+            },
+            Statement::Function(id, vec, opTyp, st) => {
+                //Do i want to add these to an initially empty vector?
+                for arg in vec { // Check each argument in vector
+                    if let Statement::FuncArg(s,t) = *arg { // if following the function argument structure
+                        
+                    } else {
+                        Err(format!("Function argument incorrect, {}.", ))
+                    }
+                }
+            },
+
+            }
+
 
         }
     }
+    
 }
 
 
@@ -291,6 +329,4 @@ impl Scope {
         }
         Err(format!("Function, {}({:?}) not in correct scope layer", id, args))
     }
-    
-
 } 
