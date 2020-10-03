@@ -157,12 +157,19 @@ pub fn block_check(block: Box<Statement>, scope: &mut Scope) -> Result<Type, Err
 
     
 }
-
-pub fn function_check() -> Result<Type, Error> {
-
-
-    //The return statement should check against the block check...
-
+    //Check function return type with the block return type.
+pub fn function_check(ret: Type, block: Box<Statement> ,scope: &mut Scope) -> Result<Type, Error> {
+    let retValue = block_check(block, scope);
+    if retValue.is_err() {
+        return retValue
+    }
+    else {
+        let retType = retValue.unwrap();
+        if retType != ret {
+            return Err(format!("Function return type doesn't match with block return {} != {}", ret, retType))   
+        }
+    }
+    Ok(Type::Unit)
 }
 
 pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<Type, Error> {
@@ -171,83 +178,120 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
             Statement::Assign(id, ex) => {
                 let sAssign = scope.get_symbol(&id);
                 if sAssign.is_err() {
-                    sAssign
+                    return sAssign
                 } // cant one-line since it will panic at err.
                 else {
                     let s2Assign = expr_check(ex, scope);
                     if s2Assign.is_err() {
-                        s2Assign
+                        return s2Assign
                     }
-                    Ok(Type::Unit)
+                    else {
+                        return Ok(Type::Unit)
+                    }
                 }
             },
             Statement::While(ex, block) => {
                 //First check expression 
-                let testEx = expr_check(ex);
+                let testEx = expr_check(ex, scope);
                 if testEx.is_err() {
-                    testEx
+                    return testEx
                 }
                 else {
                     let typ = testEx.unwrap();
                     if typ == Type::Bool {
                         let testBlock = block_check(block, scope);
                         if testBlock.is_err() {
-                            testBlock
+                            return testBlock
                         }
                         else {
                             let typ2 = testBlock.unwrap();//should be unit for block unless return
                             if typ2 == Type::Unit {
-                                Ok(Type::Unit)
+                                return Ok(Type::Unit)
                             }
                             else {
-                                Err(format!("Not a Unit return, instead got: {}", typ2))
+                                return Err(format!("Not a Unit return, instead got: {}", typ2))
                             }
                         }
                     }
                     else {
-                        Err(format!("Not a Bool, instead got: {}", typ))
+                        return Err(format!("Not a Bool, instead got: {}", typ))
                     }
                 }
             },
             Statement::Let(m,id,opT,opE) => {
-                if let Some(t) = opT && type_of(id) == String {
+                if let Some(t) = opT { //TODO: Need to chech that id valid too
                     if let Some(testExp) = opE {
                         let e = expr_check(testExp, scope);
                         if e.is_err() {
-                            e
+                            return e
                         }
                         else {
                             let typ = e.unwrap();
-                            if typ == Type {
-                                register_symbol(&id, typ); // register that variable to that type.
-                                Ok(Type::Unit)
+                            if typ == Type::Bool || typ == Type::I32 {
+                                scope.register_symbol(&id, typ); // register that variable to that type.
+                                return Ok(Type::Unit)
                             }
                         }
                     }
                 }
                 else {
-                    Err(format!("Error at let statement"))
+                    return Err(format!("Error at let statement"))
                 }
 
             },
-            Statement::Function(id, vec, opTyp, st) => {
-                //Do i want to add these to an initially empty vector?
-                for arg in vec { // Check each argument in vector
-                    if let Statement::FuncArg(s,t) = *arg { // if following the function argument structure
-                        
+            Statement::Function(id, vec, opTyp, block) => {
+                //Do i want to add these to an initially empty vector? yeee
+                let mut arguments = vec![]; //use to put Type in vec. 
+                for arg in &vec { // Check each argument in vector, set borrow to use vec again
+                    if let Statement::FuncArg(s,t) = **arg { // if following the function argument structure
+                        arguments.push(t);
                     } else {
-                        Err(format!("Function argument incorrect, {}.", ))
+                        return Err(format!("Function argument incorrect, {}.", arg))
                     }
                 }
+                //register this function to scope
+                let Some(typ) = opTyp;
+                scope.register(&id, arguments, typ);
+                scope.addLayer(); // add layer to scope for the arguments.
+                for arg in vec { // register the symbols
+                    if let Statement::FuncArg(s,t) = *arg {
+                        scope.register_symbol(&id, t)
+                    }
+                }
+                //Need to check the return value.
+                let Some(retVal) = opTyp;
+                let r = function_check(retVal, block, scope);//will throw err if incorrect in function_check
+                scope.backLayer();
             },
-
+            // No return type
+            Statement::Function(id, vec,None, block) => {
+                let mut arguments = vec![]; //use to put Type in vec. 
+                for arg in &vec {
+                    if let Statement::FuncArg(_,t) = **arg { // only care about the type.
+                        arguments.push(t);
+                    }
+                    else {
+                        return Err(format!("Function argument incorrect, {}.", arg))
+                    }
+                }
+                scope.register(&id, arguments, Type::Unit);
+                scope.addLayer();
+                for arg in vec {
+                    if let Statement::FuncArg(s,t) = *arg {
+                        scope.register_symbol(&id, t)
+                    }
+                }
+                let retur = function_check(Type::Unit, block, scope);
+                scope.backLayer();
             }
 
-
         }
+
+
     }
-    
+    return Ok(Type::Unit)
 }
+    
 
 
 
