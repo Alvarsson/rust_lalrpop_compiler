@@ -89,14 +89,14 @@ impl fmt::Display for Type {
 
 #[derive(Debug,PartialEq)]
 pub enum Statement {
-    Let(bool, String, Option<Type>, Option<Box<Exprs>>),
-    Cond(AllCond, Option<Box<Exprs>>, Box<Statement>, Option<Box<Statement>>),
+    Let(bool, String, Option<Type>, Option<Box<Exprs>>), //
+    Cond(AllCond, Option<Box<Exprs>>, Box<Statement>, Option<Box<Statement>>), //
     Block(Vec<Box<Statement>>, Option<Box<Statement>>),
-    While(Box<Exprs>, Box<Statement>),
-    Assign(String, Box<Exprs>),
+    While(Box<Exprs>, Box<Statement>), //
+    Assign(String, Box<Exprs>), //
     Return(Box<Exprs>),
-    Exprs(Box<Exprs>),
-    Function(String, Vec<Box<Statement>>, Option<Type>, Box<Statement>),
+    //Exprs(Box<Exprs>),
+    Function(String, Vec<Box<Statement>>, Option<Type>, Box<Statement>), //
     FuncArg(String, Type),
 }
 impl fmt::Display for Statement { //Statement with optional
@@ -161,9 +161,9 @@ impl fmt::Display for Statement { //Statement with optional
                 }
                 write!(f, "{}", block)?;
             }
-            Statement::Exprs(ex) => {
-                write!(f, "{}", ex)?;
-            }
+            //Statement::Exprs(ex) => {
+            //    write!(f, "{}", ex)?;
+            //}
             Statement::FuncArg(id,typ) => {
                 write!(f, "{}:{}", id, typ)?;
             }

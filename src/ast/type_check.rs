@@ -12,7 +12,12 @@ type Error = String;
 fn type_of(_: T) -> &'static str {
     type_name
 }
-
+//Boolean
+//Number
+//Id
+//Op
+//NotOp
+//FunctionCall
 fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
     match *expr {
         Exprs::Boolean(_) => Ok(Type::Bool),
@@ -107,29 +112,52 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
 }
 
 //For checking the if, else if, and else statement conditionals.
-pub fn if_else_check(stmt: Box<Statement>, scope: &mut Scope) -> Result<Type, Error> {
+pub fn condition_check(stmt: Box<Statement>, scope: &mut Scope) -> Result<Type, Error> {
     match *stmt {
-        Statement::Cond(AllCond::If, Some(e), block, None) => {
-            let rec = expr_check(e, scope);
+        Statement::Cond(AllCond::ElseIf, Some(ex), block, opNext) => {
+            let rec = expr_check(ex, scope);
             if rec.is_err() {
-                Err(format!("Incorrect if statement, {:?}", rec))
+                return rec
+                //Err(format!("Incorrect if statement, {:?}", rec))
             }
-            else {
-                //TODO: BLOCK TYPE CHECK
+            else { // check block correctness
+                let retBlock = block_check(block, scope);
+                if retBlock.is_err(){
+                    return retBlock
+                }
+                else { //check next condition
+                    let Some(next) = opNext;
+                    let retNext = condition_check(next, scope);
+                    if retNext.is_err() {
+                        return retNext
+                    }
+                    else { // check matching types in conditions
+                        let typBlock = retBlock.unwrap();
+                        let typNext = retNext.unwrap();
+                        if typBlock == typNext {
+                            Ok(typNext)
+                        }
+                        else {
+                            return Err(format!("Types of block and conditions does not match, {:?} & {:?} ",retBlock,retNext));
+                        }
+                    }
+                }
             }
         },
-        Statement::Cond(AllCond::ElseIf, Some(e), block, Some(st)) => {
-            let rec = expr_check(e, scope);
-            if rec.is_err() {
-                Err(format!("Incorrect else if statement, {:?}", rec))
+        //No next condition, only need to check expression and block
+        Statement::Cond(AllCond::ElseIf, Some(ex), block,None) => {
+            let rec = expr_check(ex, scope);
+            if rec.is_err(){
+                return rec
             }
             else {
-                //TODO: Block type check... ill need that everywhere so ill do it now.
+                return block_check(block, scope) // will throw err in itself.
             }
         },
-        Statement::Cond(AllCond::Else,) => {
-
-        }
+        Statement::Cond(AllCond::Else, None, block, None) => {
+            return block_check(block, scope)
+        },
+        _ => Err(format!("No error from check thrown, cannot check this."))
 
     }
     
@@ -143,16 +171,31 @@ pub fn block_check(block: Box<Statement>, scope: &mut Scope) -> Result<Type, Err
     let opReturn = match *block {
         Statement::Block(stmt, Some(ret)) => { //with  return
             //check that only statements are in the scope with the type of expl/impl return
+            let st = statement_check(stmt, scope);
+            if st.is_err(){
+                return st
+            }
+            else { // check the return statement type
+                if let Statement::Return(e) = *ret{
+                    expr_check(e, scope)
+                }
+                else {
+                    Err(format!("Error at return"))
+                }
+            }
         },
         Statement::Block(stmt, None) => { //No implicit/explicit return
             //need only recurse to statement check.
-        }
+            return statement_check(stmt, scope)
+        },
+        _ => Err(format!("Nothing caught, Error."))
     };
 
     //check the returntype against the function explicit return
 
     //Exit scope layer when block finished.
     scope.backLayer();
+    opReturn // return to match 
 
 
     
@@ -171,6 +214,15 @@ pub fn function_check(ret: Type, block: Box<Statement> ,scope: &mut Scope) -> Re
     }
     Ok(Type::Unit)
 }
+
+
+
+//Let
+//Assign
+//While
+//Function
+//Cond
+//Block
 
 pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<Type, Error> {
     for stmt in stmts {
@@ -283,11 +335,43 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 }
                 let retur = function_check(Type::Unit, block, scope);
                 scope.backLayer();
+            },
+            Statement::Cond(AllCond::If, opEx,block,opNext,) => {
+                let Some(ex) = opEx;
+                let ret = expr_check(ex, scope);
+                if ret.is_err() { // check the expression
+                    return ret
+                }
+                else {// go on to block check
+                    let retBlock = block_check(block, scope);
+                    if retBlock.is_err() {
+                        return retBlock
+                    }
+                    else { // go on to next statement
+                        let Some(next) = opNext;
+                        let retNext = condition_check(next,scope);
+                        if retNext.is_err() {
+                            return retNext
+                        }
+                        else {
+
+                        }
+                    }
+                }
+            },
+            //Without next statement 
+            Statement::Cond(AllCond::If, opEx, block,None) => {
+                let Some(ex) = opEx;
+                let recEx = expr_check(ex, scope);
+                if recEx.is_err(){
+                    return recEx
+                }
+                else {
+                    return block_check(block, scope)
+                }
             }
 
         }
-
-
     }
     return Ok(Type::Unit)
 }
@@ -337,10 +421,6 @@ impl Scope {
         scope_layer.insert(id.to_string(),retur);
     }
 
-
-
-
-
     fn get_symbol(&mut self, id: &String) -> Result<Type, Error> { //Check variable in scope.
         let mut currentSymbol = self.scope_layer;
         while currentSymbol >= 0 {
@@ -352,12 +432,6 @@ impl Scope {
         }
         Err(format!("Symbol, {:?} not i scope", id))
     }
-
-
-
-
-
-
     fn get_func(&mut self, id: &String, args: Vec<Type>) -> Result<Type, Error> {
         let mut currentfunc = self.scope_layer;
         while currentfunc >= 0 {
