@@ -97,6 +97,7 @@ pub Term: Box<Exprs> = {
 
 NotOp: Op = {
     "!" => Op::Not,
+    "-" => Op::Sub,
 };
 
 FacOp: Op = {

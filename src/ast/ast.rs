@@ -33,7 +33,7 @@ impl fmt::Display for Exprs {
     }
 } 
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug,PartialEq, Copy, Clone)]
 pub enum Op {
     Add,
     Sub,
@@ -70,7 +70,7 @@ impl fmt::Display for Op {
     }
 }
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug,PartialEq, Copy, Clone)]
 pub enum Type {
     I32,
     Bool,
