@@ -9,15 +9,10 @@ use crate::ast::*;
 
 type Error = String;
 
-fn type_of(_: T) -> &'static str {
-    type_name
+fn type_of<T>(_: T) -> &'static str {
+    type_name::<T>()
 }
-//Boolean
-//Number
-//Id
-//Op
-//NotOp
-//FunctionCall
+
 fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
     match *expr {
         Exprs::Boolean(_) => Ok(Type::Bool),
@@ -39,31 +34,31 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
                     if type1 == Type::I32 && type2 == Type::I32 {
                         return Ok(Type::Bool)
                     } 
-                    return Err(format!("Could not do {:?} for types {:?} and {:?}", o, e1,e2))
+                    return Err(format!("Could not do {:?} for types {:?} and {:?}", o, type1,type2))
                 },
                 Op::Add | Op::Sub | Op::Mul | Op::Div => {
                     if type1 == Type::I32 && type2 == Type::I32 {
                         return Ok(Type::Bool)
                     }
-                    return Err(format!("Cound not do {:?} for types {:?} and {:?}", o, e1,e2))
+                    return Err(format!("Cound not do {:?} for types {:?} and {:?}", o, type1,type2))
                 },
                 Op::And | Op::Or => {
                     if type1 == Type::Bool && type2 == Type::Bool {
                         return Ok(Type::Bool)
                     }
-                    return Err(format!("Could not do {:?} for types {:?} and {:?}", o, e1,e2))
+                    return Err(format!("Could not do {:?} for types {:?} and {:?}", o, type1,type2))
                 },
                 Op::Eq => {
                     if type1 == type2 {
                         return Ok(Type::Bool)
                     }
-                    return Err(format!("Could not do {:?} for types {:?} and {:?}", o, e1,e2))
+                    return Err(format!("Could not do {:?} for types {:?} and {:?}", o, type1,type2))
                 },
                 Op::Neq => {
                     if type1 != type2 {
                         return Ok(Type::Bool)
                     }
-                    return Err(format!("Could not do {:?} for types {:?} and {:?}", o, e1,e2))
+                    return Err(format!("Could not do {:?} for types {:?} and {:?}", o, type1,type2))
                 },
                 _ => Err("NONE OF OP'S".to_string())
             }
@@ -114,11 +109,10 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
 //For checking the if, else if, and else statement conditionals.
 pub fn condition_check(stmt: Box<Statement>, scope: &mut Scope) -> Result<Type, Error> {
     match *stmt {
-        Statement::Cond(AllCond::ElseIf, Some(ex), block, opNext) => {
+        Statement::Cond(AllCond::ElseIf, Some(ex), block, Some(opNext)) => {
             let rec = expr_check(ex, scope);
             if rec.is_err() {
                 return rec
-                //Err(format!("Incorrect if statement, {:?}", rec))
             }
             else { // check block correctness
                 let retBlock = block_check(block, scope);
@@ -126,8 +120,7 @@ pub fn condition_check(stmt: Box<Statement>, scope: &mut Scope) -> Result<Type, 
                     return retBlock
                 }
                 else { //check next condition
-                    let Some(next) = opNext;
-                    let retNext = condition_check(next, scope);
+                    let retNext = condition_check(opNext, scope);
                     if retNext.is_err() {
                         return retNext
                     }
@@ -138,7 +131,7 @@ pub fn condition_check(stmt: Box<Statement>, scope: &mut Scope) -> Result<Type, 
                             Ok(typNext)
                         }
                         else {
-                            return Err(format!("Types of block and conditions does not match, {:?} & {:?} ",retBlock,retNext));
+                            return Err(format!("Types of block and conditions does not match, {:?} & {:?} ",typBlock,typNext));
                         }
                     }
                 }
@@ -225,8 +218,11 @@ pub fn function_check(ret: Type, block: Box<Statement> ,scope: &mut Scope) -> Re
 //Block
 
 pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<Type, Error> {
+    let vec_len = stmts.len();
+    let mut counter = 1;
     for stmt in stmts {
-        match *stmt {
+        let last_element = (counter == vec_len);
+        let stmt_result: Result<Type, Error> =match *stmt {
             Statement::Assign(id, ex) => {
                 let sAssign = scope.get_symbol(&id);
                 if sAssign.is_err() {
@@ -271,25 +267,44 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 }
             },
             Statement::Let(m,id,opT,opE) => {
-                if let Some(t) = opT { //TODO: Need to chech that id valid too
-                    if let Some(testExp) = opE {
-                        let e = expr_check(testExp, scope);
+                if let Some(typ) = opT {
+                    if let Some(t_expr) = opE {
+                        let e = expr_check(t_expr, scope);
                         if e.is_err() {
-                            return e
-                        }
-                        else {
-                            let typ = e.unwrap();
+                            return e;
+                        } else {
+                            let expr_typ = e.unwrap();
                             if typ == Type::Bool || typ == Type::I32 {
-                                scope.register_symbol(&id, typ); // register that variable to that type.
-                                return Ok(Type::Unit)
+                                scope.register_symbol(&id, expr_typ);
+                                Ok(Type::Unit)
+                            } else {
+                                return Err(format!("Expression type error, have {:?}, expected {:?}.",expr_typ, typ))
                             }
                         }
+                    } else {
+                        return Err(format!("Error at expression check"))
                     }
+                } else {
+                    return Err(format!("Error at let-statement"))
                 }
-                else {
-                    return Err(format!("Error at let statement"))
-                }
-
+                //if let Some(t) = opT { //TODO: Need to check that id valid too
+                //     if let Some(testExp) = opE {
+                //         let e = expr_check(testExp, scope);
+                //         if e.is_err() {
+                //             return e
+                //         }
+                //         else {
+                //             let typ = e.unwrap();
+                //             if typ == Type::Bool || typ == Type::I32 {
+                //                 scope.register_symbol(&id, typ); // register that variable to that type.
+                //                 Ok(Type::Unit)
+                //             }
+                //         }
+                //     } 
+                // }
+                // else {
+                //     return Err(format!("Error at let statement"))
+                // }
             },
             Statement::Function(id, vec, opTyp, block) => {
                 //Do i want to add these to an initially empty vector? yeee
@@ -314,6 +329,7 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 let Some(retVal) = opTyp;
                 let r = function_check(retVal, block, scope);//will throw err if incorrect in function_check
                 scope.backLayer();
+                return r;
             },
             // No return type
             Statement::Function(id, vec,None, block) => {
@@ -335,6 +351,7 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 }
                 let retur = function_check(Type::Unit, block, scope);
                 scope.backLayer();
+                return retur;
             },
             Statement::Cond(AllCond::If, opEx,block,opNext,) => {
                 let Some(ex) = opEx;
@@ -354,7 +371,13 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                             return retNext
                         }
                         else {
-
+                            let block_type = retBlock.unwrap();
+                            let next_type = retNext.unwrap();
+                            if block_type != next_type {
+                                return Err(format!("Missmatching types of block and statement, expected {:?} but got {:?}.", block_type, next_type));
+                            } else {
+                                Ok(next_type)
+                            }
                         }
                     }
                 }
@@ -369,9 +392,22 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 else {
                     return block_check(block, scope)
                 }
-            }
+            },
 
+            _ => Err(format!("Error no caught statements")),
+        };
+        if stmt_result.is_err() {
+            return stmt_result;
         }
+        if last_element {
+            return stmt_result;
+        } else {
+            let err_result = stmt_result.unwrap();
+            if err_result != Type::Unit {
+                return Err(format!("Return type not Unit, instead got: {:?}",err_result));
+            }
+        }
+        counter += 1;
     }
     return Ok(Type::Unit)
 }
