@@ -6,6 +6,7 @@ use parser::*;
 
 pub mod ast;
 pub mod type_check;
+pub mod interp;
 
 
 fn main() {
@@ -65,6 +66,10 @@ fn main() {
 }
 
 #[test]
+fn test_interpreter() {
+    interp::interpreter();
+}
+#[test]
 fn test_type_check_part1() {
     let part1 = "
     fn _let_and_return() {
@@ -104,7 +109,6 @@ fn test_type_check_part2() {
         // a function taking two bool arguments returning the bool type
         // with some let statements and function calls
         fn a(x: bool, y: bool) -> bool {
-            let k = c(x, y);
             if x && y {
                 let a: bool = true;
                 y || a
@@ -170,7 +174,6 @@ fn parse_let() {
         // a function taking two bool arguments returning the bool type
         // with some let statements and function calls
         fn a(x: bool, y: bool) -> bool {
-            let k = c(x, y);
             if x && y {
                 let a: bool = true;
                 y || a
@@ -199,4 +202,12 @@ fn parse_let() {
 
     }";
     println!("{:?}", StmtsParser::new().parse(part2));
+    let test = "
+    fn hej() {
+        let a = 5;
+        let b = 7;
+        let c = a + b;
+        return c;
+    }";
+    println!("{:?}", StmtsParser::new().parse(test));
 }

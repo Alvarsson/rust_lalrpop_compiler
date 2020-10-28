@@ -1,6 +1,6 @@
 
 use std::collections::HashMap;
-use std::any::type_name;
+//use std::any::type_name;
 
 use crate::ast::*;
 //TODO: Fix check for Id in expr_check.
@@ -12,6 +12,7 @@ type Error = String;
 // fn type_of<T>(_: T) -> &'static str {
 //     type_name::<T>()
 // }
+
 
 fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
     match *expr {
@@ -38,7 +39,7 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
                 },
                 Op::Add | Op::Sub | Op::Mul | Op::Div => {
                     if type1 == Type::I32 && type2 == Type::I32 {
-                        return Ok(Type::Bool)
+                        return Ok(Type::I32)
                     }
                     return Err(format!("Cound not do {:?} for types {:?} and {:?}", o, type1,type2))
                 },
@@ -92,6 +93,7 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
                 if rec_expr.is_err() {
                     return rec_expr;
                 } 
+                println!("{:?}", rec_expr); // TEEEEEEEEEEEEEEEEEST--------->>>>>
                 arguments.push(rec_expr.unwrap()); //Push values into vector.
             }
             //Check that function is is this scope.
@@ -170,7 +172,8 @@ pub fn block_check(block: Box<Statement>, scope: &mut Scope) -> Result<Type, Err
             }
             else { // check the return statement type
                 if let Statement::Return(e) = *ret{
-                    expr_check(e, scope)
+                    let ret = expr_check(e, scope);
+                    return ret;
                 }
                 else {
                     Err(format!("Error at return"))
@@ -181,11 +184,10 @@ pub fn block_check(block: Box<Statement>, scope: &mut Scope) -> Result<Type, Err
             //need only recurse to statement check.
             return statement_check(stmt, scope)
         },
-        _ => Err(format!("Nothing caught, Error."))
+        _ => Err(format!("Nothing caught in block, Error."))
     };
 
     //check the returntype against the function explicit return
-
     //Exit scope layer when block finished.
     scope.backLayer();
     op_return // return to match 
@@ -415,7 +417,7 @@ pub struct Scope {
     symbolTable: HashMap<i32, HashMap<String, Type>>,
     src: String,
 }
-
+#[derive(Debug)]
 struct SignatureType { // either an argument or return
     arg: Vec<Type>,
     retur: Type,
@@ -462,11 +464,17 @@ impl Scope {
     }
     fn get_func(&mut self, id: &String, args: Vec<Type>) -> Result<Type, Error> {
         let mut currentfunc = self.scope_layer;
+        println!("{:?}",currentfunc);           // TEEEEEEEEEEEEEEEEEST--------->>>>>
+        println!("{:?}",id);
         while currentfunc >= 0 {
+            println!("{:?}", self.table);
             let scope_layer = self.table.get(&currentfunc).unwrap();
             if scope_layer.contains_key(id) {
                 let sign = scope_layer.get(id).unwrap();
                 let matchset = args.iter().zip(sign.arg.iter()).filter(|&(a,b)| a == b).count();
+                println!("matchet,{:?}", matchset); // TEEEEEEEEEEEEEEEEEST--------->>>>>
+                println!("args.len,{:?}", args.len()); // TEEEEEEEEEEEEEEEEEST--------->>>>>
+                println!("sign,{:?}", sign.arg.len()); // TEEEEEEEEEEEEEEEEEST--------->>>>>
                 if matchset == args.len() && matchset == sign.arg.len() {
                     return Ok(sign.retur);
                 }
@@ -476,3 +484,4 @@ impl Scope {
         Err(format!("Function, {}({:?}) not in correct scope layer", id, args))
     }
 } 
+
