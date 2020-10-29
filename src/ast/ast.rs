@@ -3,12 +3,15 @@ use std::fmt;
 
 #[derive(Debug,PartialEq, Clone)]
 pub enum Exprs {
-    Boolean(bool),
-    Number(i32),
-    Id(String),
-    NotOp(Op, Box<Exprs>),
-    Op(Box<Exprs>, Op, Box<Exprs>),
-    FunctionCall(String, Vec<Box<Exprs>>), // Uuuhh FUNKAR INTE!! Ambiguity prob... lööst
+    Boolean(bool), // true/false
+    Number(i32), // 3
+    Id(String), // a(...)
+    NotOp(Op, Box<Exprs>), // !
+    Op(Box<Exprs>, Op, Box<Exprs>), // && ...
+    FunctionCall(String, Vec<Box<Exprs>>), // a(x,y)
+    DeRef(Box<Exprs>), // *
+    Borrow(bool, Box<Exprs>), //bool for mut or not, &
+    Str(String), // "hello"
 }
 
 impl fmt::Display for Exprs {
@@ -28,6 +31,10 @@ impl fmt::Display for Exprs {
                 }
             }
             Exprs::Op(expr,op,expr2) => write!(f, "({} {} {})", expr, op, expr2)?,
+            Exprs::DeRef(expr) => write!(f, "{}", expr)?,
+            Exprs::Borrow(true,expr) => write!(f, "&mut {}",expr)?,
+            Exprs::Borrow(false, expr) => write!(f, "&{}", expr)?,
+            Exprs::Str(st) => write!(f,"\"{}\"", st)?,
         };
         Ok(())
     }
@@ -70,11 +77,14 @@ impl fmt::Display for Op {
     }
 }
 
-#[derive(Debug,PartialEq, Copy, Clone)]
+#[derive(Debug,PartialEq, Clone)]
 pub enum Type {
     I32,
     Bool,
     Unit,
+    Ref(bool, Box<Type>), // mut/not, &
+    Str,
+
 }
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -82,6 +92,9 @@ impl fmt::Display for Type {
             Type::Bool => write!(f, "{}", "bool")?,
             Type::I32 => write!(f, "{}", "i32")?,
             Type::Unit => write!(f, "{}", "()")?,
+            Type::Ref(true,ref typ) => write!(f, "&mut {}", typ)?,
+            Type::Ref(false,ref typ) => write!(f, "&{}",typ)?,
+            Type::Str => write!(f, "{}", "String")?,
         };
         Ok(())
     }

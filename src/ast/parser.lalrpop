@@ -13,6 +13,7 @@ match {
     r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { },  
     "i32",
     "bool",
+    "String",
     "{",
     "}",
     "()",
@@ -41,10 +42,13 @@ match {
     "else if",
     "return",
     "let",
+    "&",
+    "&mut",
     "mut",
     r"[0-9]+",
     r"([a-z_]|[A-Z])([a-z]|[A-Z]|[0-9]|_)*",
     "->",
+    r"'(.*)'",
     _
 }
 
@@ -56,6 +60,10 @@ pub Num: i32 = {
 
 pub Id: String = {
     r"([a-z_]|[A-Z])([a-z]|[A-Z]|[0-9]|_)*" => String::from_str(<>).unwrap(),
+};
+
+pub Str: String = {
+    r"'(.*)'" => String::from_str(<>).unwrap(),
 };
 
 //pub FuncIdent: String = {
@@ -89,6 +97,10 @@ pub Term: Box<Exprs> = {
     Bool => Box::new(Exprs::Boolean(<>)),
     Num => Box::new(Exprs::Number(<>)),
     Id => Box::new(Exprs::Id(<>)),
+    Str => Box::new(Exprs::Str(<>)),
+    "&" <Term> => Box::new(Exprs::Borrow(false, <>)),
+    "&mut" <Term> => Box::new(Exprs::Borrow(true, <>)),
+    "*" <Term> => Box::new(Exprs::DeRef(<>)),
     FunctionCall,
     "(" <Exprs> ")",
 };
@@ -128,15 +140,16 @@ Type: Type = {
     "bool" => Type::Bool,
     "i32" => Type::I32,
     "()" => Type::Unit,
+    "String" => Type::Str,
+    "&" => Type::Ref(false, Box::new(<>)),
+    "&mut" => Type::Ref(true, Box::new(<>)),
 };
 
 pub Stmt: Box<Statement> = {
-    //Exprs => Box::new(Statement::Exprs(<>)),
     <Let> ";",
     <Cond> ";"?,
     <While> ";"?,
     <Assign> ";",
-    //<Return> ";", //Fix with optional return at block end. For implicit returns.
     <Function> ";"?,
     
 };

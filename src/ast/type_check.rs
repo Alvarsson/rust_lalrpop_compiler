@@ -17,6 +17,7 @@ type Error = String;
 fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
     match *expr {
         Exprs::Boolean(_) => Ok(Type::Bool),
+        Exprs::Str(st) => Ok(Type::Str),
         Exprs::Number(_) => Ok(Type::I32),
         Exprs::Id(id) => scope.get_symbol(&id), // Go through depending on type. This means early return though.
         Exprs::Op(e1,o,e2) => {
@@ -88,21 +89,72 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
         },
         Exprs::FunctionCall(id, expressions) => {
             let mut arguments = vec![]; //instansiate an empty vector for arguments.
+            scope.addLayer(false);
             for expr in expressions { // expr_check for each expr.
+                let expr_moved = expr.clone();
                 let rec_expr = expr_check(expr, scope);
                 if rec_expr.is_err() {
+                    scope.backLayer();
                     return rec_expr;
                 } 
-                println!("{:?}", rec_expr); // TEEEEEEEEEEEEEEEEEST--------->>>>>
-                arguments.push(rec_expr.unwrap()); //Push values into vector.
+                else {
+                    let mv = scope.is_moved(*expr_moved);
+                    if mv.is_err() {
+                        scope.backLayer();
+                        let move_err = mv.unwrap_err();
+                        return Err(format!("{}", move_err));
+                    }
+                    arguments.push(rec_expr.unwrap());
+                }
             }
             //Check that function is is this scope.
             let f_scope = scope.get_func(&id, arguments);
-            if f_scope.is_err() {
-                return f_scope;
-                //Err(format!("Function, {} not in this scope", fScope))
+            scope.backLayer();
+            return if f_scope.is_err() {
+                let f_err = f_scope.unwrap_err();
+                Err(format!("{}", f_err))
+            } else {
+                Ok(f_scope.unwrap())
             }
-            Ok(f_scope.unwrap())
+            
+        },
+        Exprs::Borrow(mutable,e) => { // borrow check expressions
+            //check if id
+            if let Exprs::Id(id) = *e {
+                let ret = scope.get_symbol(&id); // symbol scope check
+                if ret.is_err() { 
+                    let ret_err = ret.unwrap_err();
+                    Err(format!("{}", ret_err))
+                } else {
+                    let ret = scope.borrow_symb(&id, mutable); // symbol borrow check
+                    if ret.is_err() {
+                        let ret_err = ret.unwrap_err();
+                        Err(format!("Error: {}", ret_err))
+                    } else {
+                        return ret;
+                    }
+                }
+            } else {
+                Err(format!("Not a variable, cant borrow"))
+            }
+        },
+        Exprs::DeRef(exp) => {
+            if let Exprs::Id(id) = * exp {
+                let ret = scope.get_symbol(&id); // symbol scope check
+                if ret.is_err() {
+                    let ret_err = ret.unwrap_err();
+                    Err(format!("{}", ret_err))
+                } else {
+                    let r = ret.unwrap();
+                    if let Type::Ref(_, typ) = r { // check ref type correct
+                        Ok(*typ)
+                    } else {
+                        Err(format!("{}, is not a reference, cant dereference", id))
+                    }
+                }
+            } else {
+                Err(format!("Can not deref expression: {}", *exp))
+            }
         },
         _ => Err(format!("Expression {:?} not checkable", *expr)),
     }
@@ -161,7 +213,7 @@ pub fn block_check(block: Box<Statement>, scope: &mut Scope) -> Result<Type, Err
     //Will need scope...need to do that before block.
 
     //First we enter block, ie go into new scope
-    scope.addLayer();
+    scope.addLayer(false);
 
     let op_return = match *block {
         Statement::Block(stmt, Some(ret)) => { //with  return
@@ -176,7 +228,7 @@ pub fn block_check(block: Box<Statement>, scope: &mut Scope) -> Result<Type, Err
                     return ret;
                 }
                 else {
-                    Err(format!("Error at return"))
+                    Err(format!("Error at block return"))
                 }
             }
         },
@@ -223,7 +275,7 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
     let vec_len = stmts.len();
     let mut counter = 1;
     for stmt in stmts {
-        let last_element = (counter == vec_len);
+        let last_element = counter == vec_len;
         let stmt_result: Result<Type, Error> =match *stmt {
             Statement::Assign(id, ex) => {
                 let s_assign = scope.get_symbol(&id);
@@ -408,30 +460,47 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
     
 
 
-
-
+#[derive(Clone)]
+struct SymbolTags {
+    symbolbase: Type,
+    mutable: bool,
+    referencedmut: bool,
+    reference: bool,
+    borrowed: bool,
+    moved: bool,
+}
 
 pub struct Scope {
     scope_layer: i32, // Scope Layer identification
     table: HashMap<i32, HashMap<String, SignatureType>>, //Two maps with the signature type in one.
-    symbolTable: HashMap<i32, HashMap<String, Type>>,
+    symbolTable: HashMap<i32, HashMap<String, SymbolTags>>,
+    func_scope: Vec<i32>,
     src: String,
 }
+
+// pub struct Scope {
+//     scope_layer: i32, // Scope Layer identification
+//     table: HashMap<i32, HashMap<String, SignatureType>>, //Two maps with the signature type in one.
+//     symbolTable: HashMap<i32, HashMap<String, Type>>,
+//     src: String,
+// }
 #[derive(Debug)]
 struct SignatureType { // either an argument or return
     arg: Vec<Type>,
     retur: Type,
 }
-
 impl Scope {
     pub fn newScope(src: String) -> Scope {
-        let mut s = Scope{scope_layer: 0, table: HashMap::new(), symbolTable: HashMap::new(), src: src};
+        let mut s = Scope{scope_layer: 0, table: HashMap::new(), symbolTable: HashMap::new(), func_scope: vec![0], src: src};
         s.table.insert(0, HashMap::new()); //new layer of hashmap to track next layer.
         s.symbolTable.insert(0, HashMap::new());
         s
     }
-    fn addLayer(&mut self) {
+    fn addLayer(&mut self, func_scope: bool) {
         self.scope_layer += 1;
+        if func_scope { // push in the function scope 
+            self.func_scope.push(self.scope_layer);
+        }
         self.table.insert(self.scope_layer, HashMap::new());
         self.symbolTable.insert(self.scope_layer, HashMap::new());
         //Must have a hashmap for handeling layers.
@@ -440,48 +509,187 @@ impl Scope {
     fn backLayer(&mut self) {
         self.table.remove(&self.scope_layer);
         self.symbolTable.remove(&self.scope_layer);
+        if self.func_scope.contains(&self.scope_layer) { // if that scope_layer id in func scope, pop dat shiet.
+            self.func_scope.pop();
+        }
         self.scope_layer -= 1;
     }
-    fn register(&mut self, id: &String, args: Vec<Type>, ret: Type) {
+    fn register(&mut self, id: &String, args: &Vec<Type>, ret: Type) {
         let scope_layer = self.table.get_mut(&self.scope_layer).unwrap();
-        scope_layer.insert(id.to_string(), SignatureType{arg: args, retur: ret});
+        scope_layer.insert(id.to_string(), SignatureType{arg: args.to_vec(), retur: ret});
     }
-    fn register_symbol(&mut self, id: &String, retur: Type) { // Add symbol
+    fn register_symbol(&mut self, id: &String, retur: Type, mutable: bool) { // Add symbol
         let scope_layer = self.symbolTable.get_mut(&self.scope_layer).unwrap();
-        scope_layer.insert(id.to_string(),retur);
+        scope_layer.insert(id.to_string(),SymbolTags{
+            symbolbase: retur,
+            mutable: mutable,
+            referencedmut: false,
+            reference: false,
+            borrowed: false,
+            moved: false,
+        });
     }
 
     fn get_symbol(&mut self, id: &String) -> Result<Type, Error> { //Check variable in scope.
         let mut currentSymbol = self.scope_layer;
-        while currentSymbol >= 0 {
+        let func_scope = *self.func_scope.last().unwrap();
+        while currentSymbol >= func_scope{
             let scope_layer = self.symbolTable.get(&currentSymbol).unwrap();
             if scope_layer.contains_key(id) {
-                return Ok(*scope_layer.get(id).unwrap());
+                let symb = scope_layer.get(id).unwrap();
+                if symb.moved {
+                    return Err(format!("Cannot use, {} here since it has been moved", id))
+                }
+                return Ok(symb.symbolbase.clone());
             }
             currentSymbol -= 1;
-        }
+        } 
         Err(format!("Symbol, {:?} not i scope", id))
     }
     fn get_func(&mut self, id: &String, args: Vec<Type>) -> Result<Type, Error> {
         let mut currentfunc = self.scope_layer;
-        println!("{:?}",currentfunc);           // TEEEEEEEEEEEEEEEEEST--------->>>>>
-        println!("{:?}",id);
         while currentfunc >= 0 {
-            println!("{:?}", self.table);
             let scope_layer = self.table.get(&currentfunc).unwrap();
             if scope_layer.contains_key(id) {
                 let sign = scope_layer.get(id).unwrap();
                 let matchset = args.iter().zip(sign.arg.iter()).filter(|&(a,b)| a == b).count();
-                println!("matchet,{:?}", matchset); // TEEEEEEEEEEEEEEEEEST--------->>>>>
-                println!("args.len,{:?}", args.len()); // TEEEEEEEEEEEEEEEEEST--------->>>>>
-                println!("sign,{:?}", sign.arg.len()); // TEEEEEEEEEEEEEEEEEST--------->>>>>
                 if matchset == args.len() && matchset == sign.arg.len() {
-                    return Ok(sign.retur);
+                    return Ok(sign.retur.clone());
                 }
             }
             currentfunc -= 1;
         }
         Err(format!("Function, {}({:?}) not in correct scope layer", id, args))
     }
+    //TODO: Comment this for user understanding.
+    fn borrow_symb(&mut self, id: &String, mutable: bool) -> Result<Type, Error> {
+        let mut current_scope = self.scope_layer;
+        let func_scope = *self.func_scope.last().unwrap(); // get the func scope value
+        while current_scope >= func_scope {
+            let mut scope_layer = self.symbolTable.get_mut(&current_scope).unwrap();
+            if scope_layer.contains_key(id) {
+                let symb = scope_layer.get(id).unwrap();
+                if mutable && symb.referencedmut {
+                    return Err(format!("{}, is already borrowed as mutable", id))
+                }
+                if mutable && symb.borrowed {
+                    return Err(format!("{}, is already borrowed as immutable", id))
+                }
+                if mutable && !symb.mutable {
+                    return Err(format!("{}, not declared mutable thus cant be borrowed as mutable", id))
+                }
+                let mut symbol_type = symb.symbolbase.clone();
+                if let Type::Ref(ref_mut,typ) = symbol_type {
+                    if mutable && !ref_mut {
+                        return Err(format!("{}'s value can't be borrowed as mutable", id))
+                    }
+                    symbol_type = *typ;
+                }
+                let mut new_symb = symb.clone();
+                if mutable {
+                    new_symb.referencedmut = true; // if mutable set ref as mut true.
+                } else {
+                    new_symb.borrowed = true; // else set as borrowed true.
+                }
+                let t = Type::Ref(mutable, Box::new(symbol_type));
+                new_symb.symbolbase = t.clone(); 
+                self.symbolTable.get_mut(&self.scope_layer).unwrap().insert(id.to_string(), new_symb);
+                return Ok(t);
+            }
+            current_scope -=1;
+        }
+        Err(format!("The variable {}, not found in scope ", id))
+    }
+    fn is_moved(&mut self, expr: Exprs) -> Result<bool, Error>{
+        if let Exprs::Id(id) = expr {
+            self.move_owner(&id)
+        } else {
+            return Ok(false);
+        }
+    }
+    fn move_owner(&mut self, id: &String) -> Result<bool, Error> {
+        let mut current_scope = self.scope_layer;
+        let func_scope = *self.func_scope.last().unwrap(); // grab last number in vector
+        while current_scope >= func_scope { // while this scope layer is larger or equal to func_layer
+            let mut scope = self.symbolTable.get_mut(&current_scope).unwrap();
+            if scope.contains_key(id) { // look for id in scope hashmap
+                let mut symb = scope.get_mut(id).unwrap();
+                return match symb.symbolbase {
+                    Type::Ref(b,t) => { // dont care about bool or type so might aswell go for _
+                        Ok(false)
+                    },
+                    Type::Str => {
+                        if symb.moved { // if moved true throw error
+                            Err(format!("{}, already moved", id))
+                        } else {
+                            symb.moved = true;
+                            Ok(true)
+                        }
+                    },
+                    _ => Ok(false) // rest is false
+                }
+            }
+            current_scope -= 1;
+        }
+        Err(format!("{}, not found in scope", id))
+    }
+    
 } 
+// impl Scope {
+//     pub fn newScope(src: String) -> Scope {
+//         let mut s = Scope{scope_layer: 0, table: HashMap::new(), symbolTable: HashMap::new(), src: src};
+//         s.table.insert(0, HashMap::new()); //new layer of hashmap to track next layer.
+//         s.symbolTable.insert(0, HashMap::new());
+//         s
+//     }
+//     fn addLayer(&mut self) {
+//         self.scope_layer += 1;
+//         self.table.insert(self.scope_layer, HashMap::new());
+//         self.symbolTable.insert(self.scope_layer, HashMap::new());
+//         //Must have a hashmap for handeling layers.
+
+//     }
+//     fn backLayer(&mut self) {
+//         self.table.remove(&self.scope_layer);
+//         self.symbolTable.remove(&self.scope_layer);
+//         self.scope_layer -= 1;
+//     }
+//     fn register(&mut self, id: &String, args: Vec<Type>, ret: Type) {
+//         let scope_layer = self.table.get_mut(&self.scope_layer).unwrap();
+//         scope_layer.insert(id.to_string(), SignatureType{arg: args, retur: ret});
+//     }
+//     fn register_symbol(&mut self, id: &String, retur: Type) { // Add symbol
+//         let scope_layer = self.symbolTable.get_mut(&self.scope_layer).unwrap();
+//         scope_layer.insert(id.to_string(),retur);
+//     }
+
+//     fn get_symbol(&mut self, id: &String) -> Result<Type, Error> { //Check variable in scope.
+//         let mut currentSymbol = self.scope_layer;
+//         while currentSymbol >= 0 {
+//             let scope_layer = self.symbolTable.get(&currentSymbol).unwrap();
+//             if scope_layer.contains_key(id) {
+//                 return Ok(*scope_layer.get(id).unwrap());
+//             }
+//             currentSymbol -= 1;
+//         }
+//         Err(format!("Symbol, {:?} not i scope", id))
+//     }
+//     fn get_func(&mut self, id: &String, args: Vec<Type>) -> Result<Type, Error> {
+//         let mut currentfunc = self.scope_layer;
+//         while currentfunc >= 0 {
+//             let scope_layer = self.table.get(&currentfunc).unwrap();
+//             if scope_layer.contains_key(id) {
+//                 let sign = scope_layer.get(id).unwrap();
+//                 let matchset = args.iter().zip(sign.arg.iter()).filter(|&(a,b)| a == b).count();
+//                 if matchset == args.len() && matchset == sign.arg.len() {
+//                     return Ok(sign.retur);
+//                 }
+//             }
+//             currentfunc -= 1;
+//         }
+//         Err(format!("Function, {}({:?}) not in correct scope layer", id, args))
+//     }
+    
+// } 
+
 
