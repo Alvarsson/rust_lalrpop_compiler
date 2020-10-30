@@ -210,11 +210,8 @@ pub fn condition_check(stmt: Box<Statement>, scope: &mut Scope) -> Result<Type, 
     
 }
 pub fn block_check(block: Box<Statement>, scope: &mut Scope) -> Result<Type, Error> {
-    //Will need scope...need to do that before block.
-
     //First we enter block, ie go into new scope
     scope.addLayer(false);
-
     let op_return = match *block {
         Statement::Block(stmt, Some(ret)) => { //with  return
             //check that only statements are in the scope with the type of expl/impl return
@@ -263,21 +260,43 @@ pub fn function_check(ret: Type, block: Box<Statement> ,scope: &mut Scope) -> Re
 }
 
 
-
-//Let
-//Assign
-//While
-//Function
-//Cond
-//Block
+// Need to restruct since borrow scope needs value for ref, deref and such
+//Let check
+//Assign check
+//While check
+//Function check
+//Cond check
+//Block check
 
 pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<Type, Error> {
     let vec_len = stmts.len();
     let mut counter = 1;
+    let mut deref_statements = vec![];
     for stmt in stmts {
+        deref_statements.push(*stmt); // get the derefed statements so we can traverse it instead.
+    }
+    for stmt in &deref_statements {
+        if let Statement::Function(id, vec,o_typ,_) = stmt {
+            let mut args = vec![];
+            for symb in vec {
+                if let Statement::FuncArg(_,typ) = &**symb {
+                    args.push(typ.clone());
+                }
+            }
+            if o_typ.is_some() { 
+                let r = o_typ.as_ref().unwrap().clone();
+                scope.register(&id, &args, r)
+            } else {
+                let r = Type::Unit;
+                scope.register(&id, &args, r)
+            }
+        }
+    }
+
+    for stmt in deref_statements {
         let last_element = counter == vec_len;
-        let stmt_result: Result<Type, Error> =match *stmt {
-            Statement::Assign(id, ex) => {
+        let stmt_result: Result<Type, Error> = match stmt {
+            Statement::Assign(id, ex) => { // No borrow handle since internal parts do that.
                 let s_assign = scope.get_symbol(&id);
                 if s_assign.is_err() {
                     return s_assign
@@ -292,7 +311,7 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                     }
                 }
             },
-            Statement::While(ex, block) => {
+            Statement::While(ex, block) => { // wont need borrow handling since its handled at internal parts
                 //First check expression 
                 let test_ex = expr_check(ex, scope);
                 if test_ex.is_err() {
@@ -320,7 +339,7 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                     }
                 }
             },
-            Statement::Let(_, id, None, Some(op_e)) => {
+            /* Statement::Let(_, id, None, Some(op_e)) => {
                 let e = expr_check(op_e, scope);
                 if e.is_err() {
                     return e;
@@ -329,77 +348,61 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                     scope.register_symbol(&id, expr_typ);
                     Ok(Type::Unit)
                 }
-            },
-            Statement::Let(m,id,opT,opE) => {
-                if let Some(typ) = opT {
-                    if let Some(t_expr) = opE {
-                        let e = expr_check(t_expr, scope);
-                        if e.is_err() {
-                            return e;
+            }, */
+            Statement::Let(mutable, id,op_typ,op_e) => {
+                if let Some(typ) = op_typ {
+                    if let Some(ex) = op_e {
+                        let expr = *ex;
+                        let ex_clone = expr.clone();
+                        let ret = expr_check(Box::new(expr), scope);
+                        if ret.is_err() {
+                            return ret;
                         } else {
-                            let expr_typ = e.unwrap();
-                            if typ == Type::Bool || typ == Type::I32 {
-                                scope.register_symbol(&id, expr_typ);
-                                Ok(Type::Unit)
+                            let can_move = scope.is_moved(ex_clone);
+                            if can_move.is_err() {
+                                return Err(format!("Cannot move, erro: {}", can_move.unwrap_err()));
+                            }
+                            let t = ret.unwrap();
+                            if typ == t {
+                                scope.register_symbol(&id, t, mutable);
+                                return Ok(Type::Unit);
                             } else {
-                                return Err(format!("Expression type error, have {:?}, expected {:?}.",expr_typ, typ))
+                                return Err(format!("Expected expression type {}, but got {}", t, typ));
                             }
                         }
                     } else {
-                        return Err(format!("Error at expression check"))
+                        Err(format!("Let expression error."))
                     }
                 } else {
-                    return Err(format!("Error at let-statement"))
+                    Err(format!("Let type error."))
                 }
             },
+            
             Statement::Function(id, vec, Some(opTyp), block) => {
-                //Do i want to add these to an initially empty vector? yeee
-                let mut arguments = vec![]; //use to put Type in vec. 
-                for arg in &vec { // Check each argument in vector, set borrow to use vec again
-                    if let Statement::FuncArg(_,t) = **arg { // if following the function argument structure
-                        arguments.push(t);
-                    } else {
-                        return Err(format!("Function argument incorrect, {}.", arg))
+                scope.addLayer(true);
+
+                for symb in vec {
+                    if let Statement::FuncArg(id,typ) = *symb {
+                        scope.register_symbol(&id, typ, false); // false as not mutable.
                     }
                 }
-                //register this function to scope
-                //let Some(typ) = opTyp;
-                scope.register(&id, arguments, opTyp);
-                scope.addLayer(); // add layer to scope for the arguments.
-                for arg in vec { // register the symbols
-                    if let Statement::FuncArg(id,t) = *arg {
-                        scope.register_symbol(&id, t)
-                    }
-                }
-                //Need to check the return value.
-                let retur = function_check(opTyp, block, scope);//will throw err if incorrect in function_check
+                let retur = function_check(opTyp, block, scope);
                 scope.backLayer();
-                
                 return retur;
             },
             // No return type
             Statement::Function(id, vec,None, block) => {
-                let mut arguments = vec![]; //use to put Type in vec. 
-                for arg in &vec {
-                    if let Statement::FuncArg(_,t) = **arg { // only care about the type.
-                        arguments.push(t);
-                    }
-                    else {
-                        return Err(format!("Function argument incorrect, {}.", arg))
-                    }
-                }
-                scope.register(&id, arguments, Type::Unit);
-                scope.addLayer();
-                for arg in vec {
-                    if let Statement::FuncArg(s,t) = *arg {
-                        scope.register_symbol(&id, t)
+                scope.addLayer(true);
+                for symb in vec {
+                    if let Statement::FuncArg(id,typ) = *symb {
+                        scope.register_symbol(&id, typ, false); // mutable as false
                     }
                 }
                 let retur = function_check(Type::Unit, block, scope);
                 scope.backLayer();
                 return retur;
             },
-            Statement::Cond(AllCond::If, Some(opEx),block,Some(opNext),) => {
+            Statement::Cond(AllCond::If, Some(opEx),block,Some(opNext),) => { // 
                 //let Some(ex) = opEx;
                 let ret = expr_check(opEx, scope);
                 if ret.is_err() { // check the expression
@@ -438,6 +441,9 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 else {
                     return block_check(block, scope)
                 }
+            },
+            Statement::Block(_,_) => {
+                block_check(Box::new(stmt), scope)
             },
 
             _ => Err(format!("Error no caught statements")),
@@ -561,6 +567,7 @@ impl Scope {
         }
         Err(format!("Function, {}({:?}) not in correct scope layer", id, args))
     }
+
     //TODO: Comment this for user understanding.
     fn borrow_symb(&mut self, id: &String, mutable: bool) -> Result<Type, Error> {
         let mut current_scope = self.scope_layer;
@@ -635,61 +642,6 @@ impl Scope {
     }
     
 } 
-// impl Scope {
-//     pub fn newScope(src: String) -> Scope {
-//         let mut s = Scope{scope_layer: 0, table: HashMap::new(), symbolTable: HashMap::new(), src: src};
-//         s.table.insert(0, HashMap::new()); //new layer of hashmap to track next layer.
-//         s.symbolTable.insert(0, HashMap::new());
-//         s
-//     }
-//     fn addLayer(&mut self) {
-//         self.scope_layer += 1;
-//         self.table.insert(self.scope_layer, HashMap::new());
-//         self.symbolTable.insert(self.scope_layer, HashMap::new());
-//         //Must have a hashmap for handeling layers.
 
-//     }
-//     fn backLayer(&mut self) {
-//         self.table.remove(&self.scope_layer);
-//         self.symbolTable.remove(&self.scope_layer);
-//         self.scope_layer -= 1;
-//     }
-//     fn register(&mut self, id: &String, args: Vec<Type>, ret: Type) {
-//         let scope_layer = self.table.get_mut(&self.scope_layer).unwrap();
-//         scope_layer.insert(id.to_string(), SignatureType{arg: args, retur: ret});
-//     }
-//     fn register_symbol(&mut self, id: &String, retur: Type) { // Add symbol
-//         let scope_layer = self.symbolTable.get_mut(&self.scope_layer).unwrap();
-//         scope_layer.insert(id.to_string(),retur);
-//     }
-
-//     fn get_symbol(&mut self, id: &String) -> Result<Type, Error> { //Check variable in scope.
-//         let mut currentSymbol = self.scope_layer;
-//         while currentSymbol >= 0 {
-//             let scope_layer = self.symbolTable.get(&currentSymbol).unwrap();
-//             if scope_layer.contains_key(id) {
-//                 return Ok(*scope_layer.get(id).unwrap());
-//             }
-//             currentSymbol -= 1;
-//         }
-//         Err(format!("Symbol, {:?} not i scope", id))
-//     }
-//     fn get_func(&mut self, id: &String, args: Vec<Type>) -> Result<Type, Error> {
-//         let mut currentfunc = self.scope_layer;
-//         while currentfunc >= 0 {
-//             let scope_layer = self.table.get(&currentfunc).unwrap();
-//             if scope_layer.contains_key(id) {
-//                 let sign = scope_layer.get(id).unwrap();
-//                 let matchset = args.iter().zip(sign.arg.iter()).filter(|&(a,b)| a == b).count();
-//                 if matchset == args.len() && matchset == sign.arg.len() {
-//                     return Ok(sign.retur);
-//                 }
-//             }
-//             currentfunc -= 1;
-//         }
-//         Err(format!("Function, {}({:?}) not in correct scope layer", id, args))
-//     }
-    
-// } 
 
 

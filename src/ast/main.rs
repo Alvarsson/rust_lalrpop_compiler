@@ -147,7 +147,7 @@ fn test_type_check_part2() {
 }
 
 #[test]
-fn parse_let() {
+fn parse_test() {
     let part1 = "
     fn _let_and_return() {
         // a function taking no arguments returning the unit type

@@ -185,7 +185,7 @@ impl fmt::Display for Statement { //Statement with optional
     }
 } 
 
-#[derive(Debug,PartialEq, Clone)]
+#[derive(Debug,PartialEq, Clone, Copy)]
 pub enum AllCond {
     If,
     Else,

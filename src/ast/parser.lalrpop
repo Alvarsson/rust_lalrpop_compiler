@@ -141,8 +141,8 @@ Type: Type = {
     "i32" => Type::I32,
     "()" => Type::Unit,
     "String" => Type::Str,
-    "&" => Type::Ref(false, Box::new(<>)),
-    "&mut" => Type::Ref(true, Box::new(<>)),
+    "&" <Type> => Type::Ref(false, Box::new(<>)), // force type Type on these
+    "&mut" <Type> => Type::Ref(true, Box::new(<>)),
 };
 
 pub Stmt: Box<Statement> = {
@@ -151,7 +151,7 @@ pub Stmt: Box<Statement> = {
     <While> ";"?,
     <Assign> ";",
     <Function> ";"?,
-    
+    <Block> ";"?, // maybe?
 };
 
 pub Stmts: Box<Statement> = {
