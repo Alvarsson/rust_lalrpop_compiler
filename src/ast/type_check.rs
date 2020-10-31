@@ -618,11 +618,11 @@ impl Scope {
         let mut current_scope = self.scope_layer;
         let func_scope = *self.func_scope.last().unwrap(); // grab last number in vector
         while current_scope >= func_scope { // while this scope layer is larger or equal to func_layer
-            let mut scope = self.symbolTable.get_mut(&current_scope).unwrap();
+            let scope = self.symbolTable.get_mut(&current_scope).unwrap();
             if scope.contains_key(id) { // look for id in scope hashmap
                 let mut symb = scope.get_mut(id).unwrap();
                 return match symb.symbolbase {
-                    Type::Ref(b,t) => { // dont care about bool or type so might aswell go for _
+                    Type::Ref(_,_) => { // dont care about bool or type so might aswell go for _
                         Ok(false)
                     },
                     Type::Str => {
