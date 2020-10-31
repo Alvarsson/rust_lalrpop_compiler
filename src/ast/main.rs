@@ -7,6 +7,7 @@ use parser::*;
 pub mod ast;
 pub mod type_check;
 pub mod interp;
+pub mod interpreter;
 
 
 fn main() {
@@ -82,6 +83,23 @@ fn main() {
     ";
 
 }
+
+#[test]
+fn test_interpreter() {
+    let test_string = "
+    fn a() {
+        let a = 5;
+        let b = 5;
+        let c = a + b;
+        return c;
+    }
+    ";
+    let test = StmtsParser::new().parse(test_string).unwrap();
+    let mut type_scope = type_check::Scope::newScope(test_string.to_string());
+    let result = type_check::statement_check(vec![test], &mut type_scope);
+    interpreter::evaluate(result);
+}
+
 //BORROW CHECK TEST IN TYPE CHECKER
 #[test]
 fn test_borrow_check() {
