@@ -87,17 +87,34 @@ fn main() {
 #[test]
 fn test_interpreter() {
     let test_string = "
-    fn a() {
-        let a = 5;
-        let b = 5;
-        let c = a + b;
-        return c;
+    fn m() -> () {
+        fn tjo(p:i32) -> i32 {
+            let a = 6;
+            let b = 3;
+            let c = a + b;
+            return c
+        }
+        tjo(4);
     }
     ";
     let test = StmtsParser::new().parse(test_string).unwrap();
     let mut type_scope = type_check::Scope::newScope(test_string.to_string());
     let result = type_check::statement_check(vec![test], &mut type_scope);
-    interpreter::evaluate(result);
+    if result.is_err() {
+        let type_check_result = result.unwrap();
+        println!("{}", type_check_result);
+    } else {
+        println!("Type check OK.");
+        let parsing = StmtsParser::new().parse(test_string).unwrap();
+        let mut eval_scope = interpreter::Scope::newScope(test_string.to_string());
+        let interp_result = interpreter::evaluate_program(vec![parsing], &mut eval_scope);
+        if interp_result.is_err() {
+            let eval_result = interp_result.unwrap();
+            println!("{}", eval_result);
+        } else {
+            println!("Evaluation OK");
+        }
+    }
 }
 
 //BORROW CHECK TEST IN TYPE CHECKER
@@ -135,6 +152,17 @@ fn test_borrow_check() {
 // TEST FOR PART 1 IN TYPE CHECKER
 #[test]
 fn test_type_check_part1() {
+    let test_string = "
+    fn m() -> i32 {
+        fn tjo() -> i32 {
+            let a = 6;
+            let b = 3;
+            let c = a + b;
+            return c
+        }
+        tjo()
+    }
+    ";
     let part1 = "
     fn _let_and_return() {
         // a function taking no arguments returning the unit type
@@ -155,8 +183,8 @@ fn test_type_check_part1() {
             -a - (-b) * y // here we have prefix operator '-'
         }
     } ";
-    let test = StmtsParser::new().parse(part1).unwrap();
-    let mut scope = type_check::Scope::newScope(part1.to_string());
+    let test = StmtsParser::new().parse(test_string).unwrap();
+    let mut scope = type_check::Scope::newScope(test_string.to_string());
     let r = type_check::statement_check(vec![test], &mut scope);
     if r.is_err() {
         println!("{}",r.unwrap_err());
@@ -231,7 +259,7 @@ fn parse_test() {
         }
     }
     ";
-    println!("{:?}", StmtsParser::new().parse(test_borrow));
+    //println!("{:?}", StmtsParser::new().parse(test_borrow));
     let part1 = "
     fn _let_and_return() {
         // a function taking no arguments returning the unit type
@@ -252,7 +280,7 @@ fn parse_test() {
             -a - (-b) * y // here we have prefix operator '-'
         }
     } ";
-    println!("{:?}", StmtsParser::new().parse(part1));
+    //println!("{:?}", StmtsParser::new().parse(part1));
     let part2 = "
     fn _if_then_else_and_while() {
         // a function taking two bool arguments returning the bool type
@@ -285,13 +313,16 @@ fn parse_test() {
         }
 
     }";
-    println!("{:?}", StmtsParser::new().parse(part2));
-    let test = "
-    fn hej() {
-        let a = 5;
-        let b = 7;
-        let c = a + b;
-        return c;
+    //println!("{:?}", StmtsParser::new().parse(part2));
+    let test_string = "
+    fn tjo() {
+        fn hej() -> i32 {
+            let a: i32 = 5;
+            let b: i32 = 5;
+            let c: i32 = a + b;
+            //return c;
+        }
+        hej()
     }";
-    //println!("{:?}", StmtsParser::new().parse(test));
+    println!("{:?}", StmtsParser::new().parse(test_string));
 }

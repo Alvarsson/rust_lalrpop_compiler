@@ -152,6 +152,7 @@ pub Stmt: Box<Statement> = {
     <Assign> ";",
     <Function> ";"?,
     <Block> ";"?, // maybe?
+    <Exprs> ";" => Box::new(Statement::Exprs(<>)), // TOAST: ADDED
 };
 
 pub Stmts: Box<Statement> = {
@@ -221,6 +222,7 @@ FuncArg: Box<Statement> = {
 };
 
 FunctionCall: Box<Exprs> = { //Ful-lösning med FuncIdent
-     <id:Id> "(" <mac:CallMacro> ")" => Box::new(Exprs::FunctionCall(id,mac))
+     <id:Id> "(" <mac:CallMacro> ")" => Box::new(Exprs::FunctionCall(id,mac)),
+     <id:Id> "()" => Box::new(Exprs::FunctionCall(id, vec![])) //TOAST: ADDING
 };
 CallMacro = FuncArgSep<Exprs>;

@@ -80,9 +80,7 @@ impl Scope {
             let scope_layer = self.symbolTable.get(&currentSymbol).unwrap();
             if scope_layer.contains_key(id) {
                 let symb = scope_layer.get(id).unwrap();
-                /* if symb.moved {
-                    return Err(format!("Cannot use, {} here since it has been moved", id))
-                } */ // wont need since type_check is done with borrow
+                
                 return Ok(symb.symbolbase.clone());
             }
             currentSymbol -= 1;
@@ -90,6 +88,7 @@ impl Scope {
         Err(format!("Symbol, {:?} not i scope", id))
     }
     fn get_func(&mut self, id: &String, args: Vec<Exprs>) -> Result<Exprs, Error> {
+        println!("TOAST: Inne i get_func ");
         let mut currentfunc = self.scope_layer;
         while currentfunc >= 0 {
             let scope_layer = self.table.get(&currentfunc).unwrap();
@@ -103,16 +102,12 @@ impl Scope {
                 }
                 
                 return func_eval(arg_data, sign.block.clone(), self);
-                /* let matchset = args.iter().zip(sign.arg.iter()).filter(|&(a,b)| a == b).count();
-                if matchset == args.len() && matchset == sign.arg.len() {
-                    return Ok(sign.retur.clone());
-                } */ // wont need this either since we look at func arguments in dif way.
             }
             currentfunc -= 1;
         }
         Err(format!("Function, {}({:?}) not in correct scope layer", id, args))
     }
-    fn symb_val(&mut self, id: &String, expr: Exprs) { // set value of symbol/variable
+    fn set_symb_val(&mut self, id: &String, expr: Exprs) { // set value of symbol/variable
         let mut current_scope = self.scope_layer;
         let func_scope = *self.func_scope.last().unwrap(); 
         while current_scope >= func_scope {
@@ -124,93 +119,21 @@ impl Scope {
             current_scope -= 1;
         }
     }
-
-        // Wont need this since checked in type_check right
-    //TODO: Comment this for user understanding.
-    /* fn borrow_symb(&mut self, id: &String, mutable: bool) -> Result<Exprs, Error> {
-        let mut current_scope = self.scope_layer;
-        let func_scope = *self.func_scope.last().unwrap(); // get the func scope value
-        while current_scope >= func_scope {
-            let mut scope_layer = self.symbolTable.get_mut(&current_scope).unwrap();
-            if scope_layer.contains_key(id) {
-                let symb = scope_layer.get(id).unwrap();
-                if mutable && symb.referencedmut {
-                    return Err(format!("{}, is already borrowed as mutable", id))
-                }
-                if mutable && symb.borrowed {
-                    return Err(format!("{}, is already borrowed as immutable", id))
-                }
-                if mutable && !symb.mutable {
-                    return Err(format!("{}, not declared mutable thus cant be borrowed as mutable", id))
-                }
-                let mut symbol_type = symb.symbolbase.clone();
-                if let Type::Ref(ref_mut,typ) = symbol_type {
-                    if mutable && !ref_mut {
-                        return Err(format!("{}'s value can't be borrowed as mutable", id))
-                    }
-                    symbol_type = *typ;
-                }
-                let mut new_symb = symb.clone();
-                if mutable {
-                    new_symb.referencedmut = true; // if mutable set ref as mut true.
-                } else {
-                    new_symb.borrowed = true; // else set as borrowed true.
-                }
-                let t = Type::Ref(mutable, Box::new(symbol_type));
-                new_symb.symbolbase = t.clone(); 
-                self.symbolTable.get_mut(&self.scope_layer).unwrap().insert(id.to_string(), new_symb);
-                return Ok(t);
-            }
-            current_scope -=1;
-        }
-        Err(format!("The variable {}, not found in scope ", id))
-    }
-    fn is_moved(&mut self, expr: Exprs) -> Result<bool, Error>{
-        if let Exprs::Id(id) = expr {
-            self.move_owner(&id)
-        } else {
-            return Ok(false);
-        }
-    }
-    fn move_owner(&mut self, id: &String) -> Result<bool, Error> {
-        let mut current_scope = self.scope_layer;
-        let func_scope = *self.func_scope.last().unwrap(); // grab last number in vector
-        while current_scope >= func_scope { // while this scope layer is larger or equal to func_layer
-            let scope = self.symbolTable.get_mut(&current_scope).unwrap();
-            if scope.contains_key(id) { // look for id in scope hashmap
-                let mut symb = scope.get_mut(id).unwrap();
-                return match symb.symbolbase {
-                    Type::Ref(_,_) => { // dont care about bool or type so might aswell go for _
-                        Ok(false)
-                    },
-                    Type::Str => {
-                        if symb.moved { // if moved true throw error
-                            Err(format!("{}, already moved", id))
-                        } else {
-                            symb.moved = true;
-                            Ok(true)
-                        }
-                    },
-                    _ => Ok(false) // rest is false
-                }
-            }
-            current_scope -= 1;
-        }
-        Err(format!("{}, not found in scope", id))
-    } */
 } 
 
 
 fn expr_eval(expr: Box<Exprs>, scope: &mut Scope) -> Result<Exprs, Error>{
     match *expr {
-        Exprs::Boolean(b) => Ok(Exprs::Boolean(b)),
-        Exprs::Number(i) => Ok(Exprs::Number(i)),
+        Exprs::Boolean(b) => Ok(*expr),
+        Exprs::Number(i) => Ok(*expr),
+        Exprs::Str(_) => Ok(*expr),
         Exprs::Id(id) => {
             let symb_exp = scope.get_symbol(&id);
             let exp = symb_exp.unwrap(); // TODO: Do i need to recursivly call expr_eval?
             let result = expr_eval(Box::new(exp), scope);
             return result;
         },
+        
         Exprs::Op(exp1, op, exp2) => {
             let left_exp = expr_eval(exp1, scope).unwrap();
             let right_exp = expr_eval(exp2, scope).unwrap();
@@ -360,8 +283,9 @@ fn expr_eval(expr: Box<Exprs>, scope: &mut Scope) -> Result<Exprs, Error>{
             } else {
                 return Err(format!("Error at ! operand"));
             }
-        },
+        }, // TODO: ADD NOTOP SUB
         Exprs::FunctionCall(id,expressions) => {
+            println!("TOAST: inne i function call");
             let mut arguments = vec![];
             scope.addLayer(false);
             for expr in expressions {
@@ -390,29 +314,32 @@ fn expr_eval(expr: Box<Exprs>, scope: &mut Scope) -> Result<Exprs, Error>{
 }
 
 pub fn block_eval(block: Box<Statement>, scope: &mut Scope) -> Result<Exprs, Error> {
+    println!("TOAST: Inne i block");
     scope.addLayer(false);
     let result = match *block {
         Statement::Block(stmt, Some(ret)) => {
             let st = evaluate_program(stmt, scope);
             if st.is_err() {
-                return st;
+                st
             } else {
+                println!("TOAST: Inne i block return");
                 if let Statement::Return(e) = *ret {
                     let ret = expr_eval(e, scope);
                     println!("Function returns: {:?}", ret); // prints the return value
-                    return ret;
+                    ret
                 } else {
                     Err(format!("Error att block evaluation"))
                 }
             }
         },
         Statement::Block(stmt, None) => {
+            println!("TOAST: Inne i block NONE");
             evaluate_program(stmt, scope)
         },
         _ => Err(format!("No block eval able, Error"))
     };
     scope.backLayer();
-    return result;
+    result
 }
 pub fn func_eval(arg_map: HashMap<String, Exprs>, block: Box<Statement>, scope: &mut Scope) -> Result<Exprs, Error> {
     // get map of func id/val -> evaluate
@@ -421,7 +348,8 @@ pub fn func_eval(arg_map: HashMap<String, Exprs>, block: Box<Statement>, scope: 
     for (id, ex) in arg_map.iter() {
         scope.register_symbol(&id, ex.clone(), false);
     }
-    let result = block_eval(scope, block);
+    println!("TOAST: Ska köra block eval");
+    let result = block_eval(block, scope);
     scope.backLayer();
     return result;
 }
@@ -431,7 +359,7 @@ pub fn condition_eval(stmt: Box<Statement>, scope: &mut Scope) -> Result<Exprs, 
         Statement::Cond(AllCond::ElseIf, Some(ex), block, Some(op_next)) => {
             let ex_res = expr_eval(ex, scope);
             if ex_res.is_err() {
-                return ex_res;
+                ex_res
             } else {
                 // eval the condition
                 let ex_bool = ex_res.unwrap();
@@ -447,199 +375,170 @@ pub fn condition_eval(stmt: Box<Statement>, scope: &mut Scope) -> Result<Exprs, 
             }
         },
         Statement::Cond(AllCond::ElseIf, Some(ex), block, None) => { // no next statement
-            
+            let ex_res = expr_eval(ex, scope);
+            if ex_res.is_err() {
+                ex_res
+            } else {
+                let value = ex_res.unwrap(); // value
+                if let Exprs::Boolean(b) = value {
+                    if b {
+                        block_eval(block, scope)
+                    } else {
+                        Ok(Exprs::Unit)
+                    }
+                } else {
+                    Err(format!("Condition error."))
+                }
+            }
         },
         Statement::Cond(AllCond::Else, None, block, None) => {
-
+            block_eval(block, scope) // else only need to evaluate the block
         },
         _ => Err(format!("Cannot eval condition"))
     }
 }
 
-fn evaluate_program(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<Values, Error> {
+pub fn evaluate_program(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<Exprs, Error> {
+    println!("TOAST: Inne i eval prog");
     let vec_len = stmts.len();
     let mut counter = 1;
     let mut deref_statements = vec![];
     for stmt in stmts {
         deref_statements.push(*stmt); // get the derefed statements so we can traverse it instead.
     }
-    for stmt in &deref_statements {
-        if let Statement::Function(id, vec,o_typ,_) = stmt {
+    for stmt in &deref_statements { // register the signature of func statements
+        if let Statement::Function(id, vec,_,block) = stmt {
             let mut args = vec![];
             for symb in vec {
-                if let Statement::FuncArg(_,typ) = &**symb {
-                    args.push(typ.clone());
+                if let Statement::FuncArg(id,_) = &**symb { // not interested in type but instead id
+                    args.push(id.clone());
                 }
             }
-            if o_typ.is_some() { 
-                let r = o_typ.as_ref().unwrap().clone();
-                scope.register(&id, &args, r)
-            } else {
-                let r = Type::Unit;
-                scope.register(&id, &args, r)
-            }
+            scope.register(&id, args,*block.clone()); // register function layer
+            
         }
     }
 
     for stmt in deref_statements {
-        let last_element = counter == vec_len;
-        let stmt_result: Result<Type, Error> = match stmt {
-            Statement::Assign(id, ex) => { // No borrow handle since internal parts do that.
+        let last_element = counter == vec_len; // set bool for when last element is reacherd
+        let stmt_result: Result<Exprs, Error> = match stmt {
+            Statement::Assign(id, ex) => { 
                 let s_assign = scope.get_symbol(&id);
-                if s_assign.is_err() {
-                    return s_assign
-                } // cant one-line since it will panic at err.
-                else {
-                    let s2_assign = expr_check(ex, scope);
-                    if s2_assign.is_err() {
-                        return s2_assign
+                if s_assign.is_err() { // dont actually need error handler since type check.
+                    s_assign
+                } else {
+                    let ex_eval = expr_eval(ex, scope); // get expr eval to variable
+                    if ex_eval.is_err() {
+                        ex_eval
                     }
                     else {
-                        return Ok(Type::Unit)
+                        let res = ex_eval.unwrap(); // get expr val
+                        scope.set_symb_val(&id, res);
+                        Ok(Exprs::Unit)
                     }
                 }
             },
             Statement::While(ex, block) => { // wont need borrow handling since its handled at internal parts
-                //First check expression 
-                let test_ex = expr_check(ex, scope);
-                if test_ex.is_err() {
-                    return test_ex
-                }
-                else {
-                    let typ = test_ex.unwrap();
-                    if typ == Type::Bool {
-                        let test_block = block_check(block, scope);
-                        if test_block.is_err() {
-                            return test_block
-                        }
-                        else {
-                            let typ2 = test_block.unwrap();//should be unit for block unless return
-                            if typ2 == Type::Unit {
-                                return Ok(Type::Unit)
-                            }
-                            else {
-                                return Err(format!("Not a Unit return, instead got: {}", typ2))
-                            }
-                        }
-                    }
-                    else {
-                        return Err(format!("Not a Bool, instead got: {}", typ))
-                    }
-                }
-            },
-            Statement::Let(mutable, id,op_typ,op_e) => {
-                if let Some(typ) = op_typ {
-                    if let Some(ex) = op_e {
-                        let expr = *ex;
-                        let ex_clone = expr.clone();
-                        let ret = expr_check(Box::new(expr), scope);
-                        if ret.is_err() {
-                            return ret;
-                        } else {
-                            let can_move = scope.is_moved(ex_clone);
-                            if can_move.is_err() {
-                                return Err(format!("Cannot move, erro: {}", can_move.unwrap_err()));
-                            }
-                            let t = ret.unwrap();
-                            if typ == t {
-                                scope.register_symbol(&id, t, mutable);
-                                return Ok(Type::Unit);
-                            } else {
-                                return Err(format!("Expected expression type {}, but got {}", t, typ));
-                            }
-                        }
+                
+                loop { // while true, wait for break
+                    let ex_res = expr_eval(ex.clone(), scope);
+                    if ex_res.is_err() {
+                        break;
                     } else {
-                        Err(format!("Let expression error."))
+                        let ex_value = ex_res.unwrap();
+                        if let Exprs::Boolean(b) = ex_value {
+                            if !b { // not true
+                                break
+                            } else {
+                                block_eval(block.clone(), scope); // evaluate inside block
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                Ok(Exprs::Unit)
+            },
+            Statement::Let(mutable, id,_,op_e) => {
+                // no need for type check
+                println!("TOAST: Inne i Let statement ");
+                if let Some(ex) = op_e { // expression optional eval
+                    let expr = *ex;
+                    let ret = expr_eval(Box::new(expr), scope);
+                    if ret.is_err() {
+                        ret
+                    } else {
+                        scope.register_symbol(&id, ret.unwrap(), mutable);
+                        Ok(Exprs::Unit) // return unit since let statement 
                     }
                 } else {
-                    Err(format!("Let type error."))
+                    Err(format!("Let expression error."))
                 }
             },
-            
-            Statement::Function(id, vec, Some(opTyp), block) => {
-                scope.addLayer(true);
+            Statement::Function(id, vec, Some(t), block) => {
+                // only need to return unit type, only a function check
+                println!("TOAST: Inne i function statement ");
 
-                for symb in vec {
-                    if let Statement::FuncArg(id,typ) = *symb {
-                        scope.register_symbol(&id, typ, false); // false as not mutable.
-                    }
-                }
-                let retur = function_check(opTyp, block, scope);
-                scope.backLayer();
-                return retur;
+                Ok(Exprs::Unit)
             },
             // No return type
             Statement::Function(id, vec,None, block) => {
-                scope.addLayer(true);
-                for symb in vec {
-                    if let Statement::FuncArg(id,typ) = *symb {
-                        scope.register_symbol(&id, typ, false); // mutable as false
-                    }
-                }
-                let retur = function_check(Type::Unit, block, scope);
-                scope.backLayer();
-                return retur;
+                Ok(Exprs::Unit)
             },
-            Statement::Cond(AllCond::If, Some(opEx),block,Some(opNext),) => { // 
+            Statement::Cond(AllCond::If, Some(opEx),block,Some(opNext)) => { // 
                 //let Some(ex) = opEx;
-                let ret = expr_check(opEx, scope);
-                if ret.is_err() { // check the expression
-                    return ret
+                let ex_eval = expr_eval(opEx, scope);
+                if ex_eval.is_err() { // check the expression
+                    return ex_eval;
                 }
                 else {// go on to block check
-                    let retBlock = block_check(block, scope);
-                    if retBlock.is_err() {
-                        return retBlock
-                    }
-                    else { // go on to next statement
-                        //let Some(next) = opNext;
-                        let retNext = condition_check(opNext,scope);
-                        if retNext.is_err() {
-                            return retNext
+                    let ex_value = ex_eval.unwrap();
+                    if let Exprs::Boolean(b) = ex_value {
+                        if b { // if true need to eval the block
+                            block_eval(block, scope)
+                        } else { // otherwise eval next possible condition
+                            condition_eval(opNext, scope)
                         }
-                        else {
-                            let block_type = retBlock.unwrap();
-                            let next_type = retNext.unwrap();
-                            if block_type != next_type {
-                                return Err(format!("Missmatching types of block and statement, expected {:?} but got {:?}.", block_type, next_type));
-                            } else {
-                                Ok(next_type)
-                            }
-                        }
+                    } else {
+                        Err(format!("Condition If Error"))
                     }
                 }
             },
             //Without next statement 
             Statement::Cond(AllCond::If, Some(opEx), block,None) => {
-                //let Some(ex) = opEx;
-                let rec_ex = expr_check(opEx, scope);
-                if rec_ex.is_err(){
-                    return rec_ex
-                }
-                else {
-                    return block_check(block, scope)
+                let ex_eval = expr_eval(opEx, scope);
+                if ex_eval.is_err() {
+                    ex_eval
+                } else {
+                    let ex_value = ex_eval.unwrap();
+                    if let Exprs::Boolean(b) = ex_value {
+                        if b { // if expression eval to true eval block
+                            block_eval(block, scope)
+                        } else {
+                            Ok(Exprs::Unit)
+                        }
+                    } else {
+                        Err(format!("Error at no next condition"))
+                    }
                 }
             },
             Statement::Block(_,_) => {
-                block_check(Box::new(stmt), scope)
+                println!("TOAST: Inne i block statement ");
+                block_eval(Box::new(stmt), scope) // run through block evaluate function
             },
 
             _ => Err(format!("Error no caught statements")),
         };
         if stmt_result.is_err() {
-            return stmt_result;
+            return stmt_result
         }
         if last_element {
-            return stmt_result;
-        } else {
-            let err_result = stmt_result.unwrap();
-            if err_result != Type::Unit {
-                return Err(format!("Return type not Unit, instead got: {:?}",err_result));
-            }
-        }
+            return stmt_result
+        } 
+        
         counter += 1;
     }
-    return Ok(Type::Unit)
+    return Ok(Exprs::Unit)
         
 }
 

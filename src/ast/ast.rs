@@ -12,6 +12,7 @@ pub enum Exprs {
     DeRef(Box<Exprs>), // *
     Borrow(bool, Box<Exprs>), //bool for mut or not, &
     Str(String), // "hello"
+    Unit,
 }
 
 impl fmt::Display for Exprs {
@@ -35,6 +36,7 @@ impl fmt::Display for Exprs {
             Exprs::Borrow(true,expr) => write!(f, "&mut {}",expr)?,
             Exprs::Borrow(false, expr) => write!(f, "&{}", expr)?,
             Exprs::Str(st) => write!(f,"\"{}\"", st)?,
+            Exprs::Unit => write!(f, "{}", "()")?,
         };
         Ok(())
     }
@@ -108,7 +110,7 @@ pub enum Statement {
     While(Box<Exprs>, Box<Statement>), //
     Assign(String, Box<Exprs>), //
     Return(Box<Exprs>),
-    //Exprs(Box<Exprs>),
+    Exprs(Box<Exprs>), // TOAST: ADDED
     Function(String, Vec<Box<Statement>>, Option<Type>, Box<Statement>), //
     FuncArg(String, Type),
 }
@@ -174,11 +176,12 @@ impl fmt::Display for Statement { //Statement with optional
                 }
                 write!(f, "{}", block)?;
             }
-            //Statement::Exprs(ex) => {
-            //    write!(f, "{}", ex)?;
-            //}
+            
             Statement::FuncArg(id,typ) => {
                 write!(f, "{}:{}", id, typ)?;
+            }
+            Statement::Exprs(e) => { // TOAST: ADDED
+                write!(f, "{};", e)?;
             }
         };
         Ok(())

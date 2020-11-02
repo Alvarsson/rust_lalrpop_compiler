@@ -195,7 +195,7 @@ pub fn condition_check(stmt: Box<Statement>, scope: &mut Scope) -> Result<Type, 
         Statement::Cond(AllCond::ElseIf, Some(ex), block,None) => {
             let rec = expr_check(ex, scope);
             if rec.is_err(){
-                return rec
+                rec
             }
             else {
                 return block_check(block, scope) // will throw err in itself.
@@ -217,7 +217,7 @@ pub fn block_check(block: Box<Statement>, scope: &mut Scope) -> Result<Type, Err
             //check that only statements are in the scope with the type of expl/impl return
             let st = statement_check(stmt, scope);
             if st.is_err(){
-                return st
+                st
             }
             else { // check the return statement type
                 if let Statement::Return(e) = *ret{
@@ -231,7 +231,7 @@ pub fn block_check(block: Box<Statement>, scope: &mut Scope) -> Result<Type, Err
         },
         Statement::Block(stmt, None) => { //No implicit/explicit return
             //need only recurse to statement check.
-            return statement_check(stmt, scope)
+            statement_check(stmt, scope)
         },
         _ => Err(format!("Nothing caught in block, Error."))
     };
@@ -299,15 +299,15 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
             Statement::Assign(id, ex) => { // No borrow handle since internal parts do that.
                 let s_assign = scope.get_symbol(&id);
                 if s_assign.is_err() {
-                    return s_assign
+                    s_assign
                 } // cant one-line since it will panic at err.
                 else {
                     let s2_assign = expr_check(ex, scope);
                     if s2_assign.is_err() {
-                        return s2_assign
+                        s2_assign
                     }
                     else {
-                        return Ok(Type::Unit)
+                        Ok(Type::Unit)
                     }
                 }
             },
@@ -315,19 +315,19 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 //First check expression 
                 let test_ex = expr_check(ex, scope);
                 if test_ex.is_err() {
-                    return test_ex
+                    test_ex
                 }
                 else {
                     let typ = test_ex.unwrap();
                     if typ == Type::Bool {
                         let test_block = block_check(block, scope);
                         if test_block.is_err() {
-                            return test_block
+                            test_block
                         }
                         else {
                             let typ2 = test_block.unwrap();//should be unit for block unless return
                             if typ2 == Type::Unit {
-                                return Ok(Type::Unit)
+                                Ok(Type::Unit)
                             }
                             else {
                                 return Err(format!("Not a Unit return, instead got: {}", typ2))
@@ -339,16 +339,26 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                     }
                 }
             },
-            /* Statement::Let(_, id, None, Some(op_e)) => {
-                let e = expr_check(op_e, scope);
-                if e.is_err() {
-                    return e;
+            Statement::Let(mutable, id, None, op_e) => {
+                if let Some(ex) = op_e {
+                    let expr = *ex;
+                    let ex_clone = expr.clone();
+                    let ret = expr_check(Box::new(expr), scope);
+                    if ret.is_err() {
+                        return ret;
+                    } else {
+                        let can_move = scope.is_moved(ex_clone);
+                        if can_move.is_err() {
+                            return Err(format!("Cannot move, error: {}", can_move.unwrap_err()));
+                        } else {
+                            scope.register_symbol(&id, ret.unwrap(), mutable);
+                            Ok(Type::Unit)
+                        }
+                    }
                 } else {
-                    let expr_typ = e.unwrap();
-                    scope.register_symbol(&id, expr_typ);
-                    Ok(Type::Unit)
+                    Err(format!("Let with no type expression error"))
                 }
-            }, */
+            },
             Statement::Let(mutable, id,op_typ,op_e) => {
                 if let Some(typ) = op_typ {
                     if let Some(ex) = op_e {
@@ -365,9 +375,9 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                             let t = ret.unwrap();
                             if typ == t {
                                 scope.register_symbol(&id, t, mutable);
-                                return Ok(Type::Unit);
+                                Ok(Type::Unit)
                             } else {
-                                return Err(format!("Expected expression type {}, but got {}", t, typ));
+                                Err(format!("Expected expression type {}, but got {}", t, typ))
                             }
                         }
                     } else {
@@ -449,14 +459,14 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
             _ => Err(format!("Error no caught statements")),
         };
         if stmt_result.is_err() {
-            return stmt_result;
+            return stmt_result
         }
         if last_element {
-            return stmt_result;
+            return stmt_result
         } else {
             let err_result = stmt_result.unwrap();
             if err_result != Type::Unit {
-                return Err(format!("Return type not Unit, instead got: {:?}",err_result));
+                return Err(format!("Return type not Unit, instead got: {:?}",err_result))
             }
         }
         counter += 1;
@@ -484,12 +494,6 @@ pub struct Scope {
     src: String,
 }
 
-// pub struct Scope {
-//     scope_layer: i32, // Scope Layer identification
-//     table: HashMap<i32, HashMap<String, SignatureType>>, //Two maps with the signature type in one.
-//     symbolTable: HashMap<i32, HashMap<String, Type>>,
-//     src: String,
-// }
 #[derive(Debug)]
 struct SignatureType { // either an argument or return
     arg: Vec<Type>,
@@ -552,6 +556,7 @@ impl Scope {
         } 
         Err(format!("Symbol, {:?} not i scope", id))
     }
+
     fn get_func(&mut self, id: &String, args: Vec<Type>) -> Result<Type, Error> {
         let mut currentfunc = self.scope_layer;
         while currentfunc >= 0 {
