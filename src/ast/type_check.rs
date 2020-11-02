@@ -204,7 +204,7 @@ pub fn condition_check(stmt: Box<Statement>, scope: &mut Scope) -> Result<Type, 
         Statement::Cond(AllCond::Else, None, block, None) => {
             return block_check(block, scope)
         },
-        _ => Err(format!("No error from check thrown, cannot check this."))
+        _ => Err(format!("No condition check thrown, cannot check this."))
 
     }
     
@@ -640,7 +640,6 @@ impl Scope {
         }
         Err(format!("{}, not found in scope", id))
     }
-    
 } 
 
 

@@ -59,18 +59,18 @@ pub enum Op {
 impl fmt::Display for Op {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Op::Add => write!(f, "{}", "+")?,
-            Op::Sub => write!(f, "{}", "-")?,
-            Op::Mul => write!(f, "{}", "*")?,
-            Op::Div => write!(f, "{}", "/")?,
-            Op::And => write!(f, "{}", "&&")?,
-            Op::Or => write!(f, "{}", "||")?,
-            Op::Eq => write!(f, "{}", "==")?,
-            Op::Neq => write!(f, "{}", "!=")?,
-            Op::Gtr => write!(f, "{}", ">")?,
-            Op::Lss => write!(f, "{}", "<")?,
-            Op::Geq => write!(f, "{}", ">=")?,
-            Op::Leq => write!(f, "{}", "<=")?,
+            Op::Add => write!(f, "{}", "+")?,//
+            Op::Sub => write!(f, "{}", "-")?,//
+            Op::Mul => write!(f, "{}", "*")?,//
+            Op::Div => write!(f, "{}", "/")?, //
+            Op::And => write!(f, "{}", "&&")?, //
+            Op::Or => write!(f, "{}", "||")?, //
+            Op::Eq => write!(f, "{}", "==")?, //
+            Op::Neq => write!(f, "{}", "!=")?, //
+            Op::Gtr => write!(f, "{}", ">")?,//
+            Op::Lss => write!(f, "{}", "<")?,//
+            Op::Geq => write!(f, "{}", ">=")?,//
+            Op::Leq => write!(f, "{}", "<=")?,//
             Op::Not => write!(f, "{}", "!")?,
         };
         Ok(())
