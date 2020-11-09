@@ -83,6 +83,41 @@ fn main() {
     ";
 
 }
+#[test]
+fn test_interp2() {
+    let test_string = "
+    fn main() -> () {
+        fn tjo(p:i32) -> i32 {
+            let a = 6;
+            let b = 3;
+            let c = a + b;
+            return c;
+        }
+        tjo(4);
+        fn hoj() {
+            let k = 8;
+        }
+    }
+    ";
+    let parsing = StmtsParser::new().parse(test_string).unwrap();
+    let mut scope = interpreter::Scope::newScope(test_string.to_string());
+    let interp_result = interpreter::evaluate_program(vec![parsing], &mut scope);
+    if interp_result.is_err() {
+        let eval_result = interp_result.unwrap();
+        println!("{}", eval_result);
+    } else {
+        println!("Evaluation OK");
+    }
+}
+/* let test = StmtsParser::new().parse(test_string).unwrap();
+    let mut scope = type_check::Scope::newScope(test_string.to_string());
+    let r = type_check::statement_check(vec![test], &mut scope);
+    if r.is_err() {
+        println!("{}",r.unwrap_err());
+    }
+    else {
+        println!("Part 1 OK for type_checker");
+    } */
 
 #[test]
 fn test_interpreter() {
@@ -92,7 +127,7 @@ fn test_interpreter() {
             let a = 6;
             let b = 3;
             let c = a + b;
-            return c
+            return c;
         }
         tjo(4);
     }
@@ -153,14 +188,14 @@ fn test_borrow_check() {
 #[test]
 fn test_type_check_part1() {
     let test_string = "
-    fn m() -> i32 {
+    fn m() -> () {
         fn tjo() -> i32 {
             let a = 6;
             let b = 3;
             let c = a + b;
-            return c
+            return c;
         }
-        tjo()
+        tjo(4);
     }
     ";
     let part1 = "
@@ -313,7 +348,7 @@ fn parse_test() {
         }
 
     }";
-    //println!("{:?}", StmtsParser::new().parse(part2));
+    println!("{:?}", StmtsParser::new().parse(part2));
     let test_string = "
     fn tjo() {
         fn hej() -> i32 {

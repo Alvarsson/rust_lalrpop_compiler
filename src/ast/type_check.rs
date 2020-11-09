@@ -275,6 +275,7 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
     for stmt in stmts {
         deref_statements.push(*stmt); // get the derefed statements so we can traverse it instead.
     }
+    println!("{}", deref_statements.clone().len());
     for stmt in &deref_statements {
         if let Statement::Function(id, vec,o_typ,_) = stmt {
             let mut args = vec![];
