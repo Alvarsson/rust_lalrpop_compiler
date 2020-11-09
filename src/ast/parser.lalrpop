@@ -226,3 +226,7 @@ FunctionCall: Box<Exprs> = { //Ful-lösning med FuncIdent
      <id:Id> "()" => Box::new(Exprs::FunctionCall(id, vec![])) //TOAST: ADDING
 };
 CallMacro = FuncArgSep<Exprs>;
+
+pub Program: Box<Statement> = {
+    <stmt:Stmt+> => Box::new(Statement::Program(stmt)) 
+}

@@ -113,6 +113,7 @@ pub enum Statement {
     Exprs(Box<Exprs>), // TOAST: ADDED
     Function(String, Vec<Box<Statement>>, Option<Type>, Box<Statement>), //
     FuncArg(String, Type),
+    Program(Vec<Box<Statement>>),
 }
 impl fmt::Display for Statement { //Statement with optional
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -182,6 +183,9 @@ impl fmt::Display for Statement { //Statement with optional
             }
             Statement::Exprs(e) => { // TOAST: ADDED
                 write!(f, "{};", e)?;
+            }
+            Statement::Program(s_vec) => {
+                write!(f, "{:?}", s_vec)?;
             }
         };
         Ok(())

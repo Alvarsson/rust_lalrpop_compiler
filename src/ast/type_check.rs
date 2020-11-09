@@ -275,7 +275,6 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
     for stmt in stmts {
         deref_statements.push(*stmt); // get the derefed statements so we can traverse it instead.
     }
-    println!("{}", deref_statements.clone().len());
     for stmt in &deref_statements {
         if let Statement::Function(id, vec,o_typ,_) = stmt {
             let mut args = vec![];
@@ -331,12 +330,12 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                                 Ok(Type::Unit)
                             }
                             else {
-                                return Err(format!("Not a Unit return, instead got: {}", typ2))
+                                Err(format!("Not a Unit return, instead got: {}", typ2))
                             }
                         }
                     }
                     else {
-                        return Err(format!("Not a Bool, instead got: {}", typ))
+                        Err(format!("Not a Bool, instead got: {}", typ))
                     }
                 }
             },
@@ -346,11 +345,11 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                     let ex_clone = expr.clone();
                     let ret = expr_check(Box::new(expr), scope);
                     if ret.is_err() {
-                        return ret;
+                        ret
                     } else {
                         let can_move = scope.is_moved(ex_clone);
                         if can_move.is_err() {
-                            return Err(format!("Cannot move, error: {}", can_move.unwrap_err()));
+                            Err(format!("Cannot move, error: {}", can_move.unwrap_err()))
                         } else {
                             scope.register_symbol(&id, ret.unwrap(), mutable);
                             Ok(Type::Unit)
@@ -367,18 +366,19 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                         let ex_clone = expr.clone();
                         let ret = expr_check(Box::new(expr), scope);
                         if ret.is_err() {
-                            return ret;
+                            ret
                         } else {
                             let can_move = scope.is_moved(ex_clone);
                             if can_move.is_err() {
-                                return Err(format!("Cannot move, erro: {}", can_move.unwrap_err()));
-                            }
-                            let t = ret.unwrap();
-                            if typ == t {
-                                scope.register_symbol(&id, t, mutable);
-                                Ok(Type::Unit)
+                                Err(format!("Cannot move, erro: {}", can_move.unwrap_err()))
                             } else {
-                                Err(format!("Expected expression type {}, but got {}", t, typ))
+                                let t = ret.unwrap();
+                                if typ == t {
+                                    scope.register_symbol(&id, t, mutable);
+                                    Ok(Type::Unit)
+                                } else {
+                                    Err(format!("Expected expression type {}, but got {}", t, typ))
+                                }
                             }
                         }
                     } else {
@@ -399,7 +399,7 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 }
                 let retur = function_check(opTyp, block, scope);
                 scope.backLayer();
-                return retur;
+                retur
             },
             // No return type
             Statement::Function(id, vec,None, block) => {
@@ -411,30 +411,30 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 }
                 let retur = function_check(Type::Unit, block, scope);
                 scope.backLayer();
-                return retur;
+                retur
             },
             Statement::Cond(AllCond::If, Some(opEx),block,Some(opNext),) => { // 
                 //let Some(ex) = opEx;
                 let ret = expr_check(opEx, scope);
                 if ret.is_err() { // check the expression
-                    return ret
+                    ret
                 }
                 else {// go on to block check
                     let retBlock = block_check(block, scope);
                     if retBlock.is_err() {
-                        return retBlock
+                        retBlock
                     }
                     else { // go on to next statement
                         //let Some(next) = opNext;
                         let retNext = condition_check(opNext,scope);
                         if retNext.is_err() {
-                            return retNext
+                            retNext
                         }
                         else {
                             let block_type = retBlock.unwrap();
                             let next_type = retNext.unwrap();
                             if block_type != next_type {
-                                return Err(format!("Missmatching types of block and statement, expected {:?} but got {:?}.", block_type, next_type));
+                                Err(format!("Missmatching types of block and statement, expected {:?} but got {:?}.", block_type, next_type))
                             } else {
                                 Ok(next_type)
                             }
@@ -447,15 +447,22 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 //let Some(ex) = opEx;
                 let rec_ex = expr_check(opEx, scope);
                 if rec_ex.is_err(){
-                    return rec_ex
+                    rec_ex
                 }
                 else {
-                    return block_check(block, scope)
+                    block_check(block, scope)
                 }
             },
             Statement::Block(_,_) => {
                 block_check(Box::new(stmt), scope)
             },
+            Statement::Program(stmt_vec) => {
+                statement_check(stmt_vec, scope)
+            },
+            Statement::Exprs(expr) => {
+                expr_check(expr, scope);
+                Ok(Type::Unit)
+            }
 
             _ => Err(format!("Error no caught statements")),
         };

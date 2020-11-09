@@ -38,7 +38,6 @@ impl Scope {
         s
     }
     fn addLayer(&mut self, func_scope: bool) {
-        println!("TOAST: Inne i add layer");
         self.scope_layer += 1;
         if func_scope { // push in the function scope 
             self.func_scope.push(self.scope_layer);
@@ -49,7 +48,6 @@ impl Scope {
 
     }
     fn backLayer(&mut self) {
-        println!("TOAST: Inne i back layer ");
         self.table.remove(&self.scope_layer);
         self.symbolTable.remove(&self.scope_layer);
         if self.func_scope.contains(&self.scope_layer) { // if that scope_layer id in func scope, pop dat shiet.
@@ -58,13 +56,11 @@ impl Scope {
         self.scope_layer -= 1;
     }
     fn register(&mut self, id: &String, args: Vec<String>, stmts: Statement) {
-        println!("TOAST: Inne i register");
         let scope_layer = self.table.get_mut(&self.scope_layer).unwrap();
         let stmt_box = Box::new(stmts);
         scope_layer.insert(id.to_string(), Signature{arg: args.to_vec(), block: stmt_box});
     }
     fn register_symbol(&mut self, id: &String, retur: Exprs, mutable: bool) { // Instead of type i run with expression value, bool/int
-        println!("TOAST: Inne i reg_symb ");
         let scope_layer = self.symbolTable.get_mut(&self.scope_layer).unwrap();
         scope_layer.insert(id.to_string(),SymbolTags{
             symbolbase: retur,
@@ -78,7 +74,6 @@ impl Scope {
 
     // TODO: Write so that this returns expression value.
     fn get_symbol(&mut self, id: &String) -> Result<Exprs, Error> { //Check variable in scope.
-        println!("TOAST: Inne i get_symb ");
         let mut currentSymbol = self.scope_layer; // current scope layer
         let func_scope = *self.func_scope.last().unwrap(); 
         while currentSymbol >= func_scope{
@@ -93,7 +88,6 @@ impl Scope {
         Err(format!("Symbol, {:?} not i scope", id))
     }
     fn get_func(&mut self, id: &String, args: Vec<Exprs>) -> Result<Exprs, Error> {
-        println!("TOAST: Inne i get_func ");
         let mut currentfunc = self.scope_layer;
         while currentfunc >= 0 {
             let scope_layer = self.table.get(&currentfunc).unwrap();
@@ -105,15 +99,16 @@ impl Scope {
                     let arg_clone = args.get(count).unwrap().clone();
                     arg_data.insert(str_clone, arg_clone);
                 }
-                
-                return func_eval(arg_data, sign.block.clone(), self);
+                let result = func_eval(arg_data, sign.block.clone(), self);
+                println!("Function {}, returns {:?}.", id, result);
+                return result;
+                //return func_eval(arg_data, sign.block.clone(), self);
             }
             currentfunc -= 1;
         }
         Err(format!("Function, {}({:?}) not in correct scope layer", id, args))
     }
     fn set_symb_val(&mut self, id: &String, expr: Exprs) { // set value of symbol/variable
-        println!("TOAST: Inne i symb val ");
         let mut current_scope = self.scope_layer;
         let func_scope = *self.func_scope.last().unwrap(); 
         while current_scope >= func_scope {
@@ -129,7 +124,6 @@ impl Scope {
 
 
 fn expr_eval(expr: Box<Exprs>, scope: &mut Scope) -> Result<Exprs, Error>{
-    println!("TOAST: Inne i expr eval ");
     match *expr {
         Exprs::Boolean(b) => Ok(*expr),
         Exprs::Number(i) => Ok(*expr),
@@ -292,7 +286,6 @@ fn expr_eval(expr: Box<Exprs>, scope: &mut Scope) -> Result<Exprs, Error>{
             }
         }, // TODO: ADD NOTOP SUB
         Exprs::FunctionCall(id,expressions) => {
-            println!("TOAST: inne i function call");
             let mut arguments = vec![];
             scope.addLayer(false);
             for expr in expressions {
@@ -321,7 +314,6 @@ fn expr_eval(expr: Box<Exprs>, scope: &mut Scope) -> Result<Exprs, Error>{
 }
 
 pub fn block_eval(block: Box<Statement>, scope: &mut Scope) -> Result<Exprs, Error> {
-    println!("TOAST: Inne i block");
     scope.addLayer(false);
     let result = match *block {
         Statement::Block(stmt, Some(ret)) => {
@@ -329,10 +321,8 @@ pub fn block_eval(block: Box<Statement>, scope: &mut Scope) -> Result<Exprs, Err
             if st.is_err() {
                 st
             } else {
-                println!("TOAST: Inne i block return");
                 if let Statement::Return(e) = *ret {
                     let ret = expr_eval(e, scope);
-                    println!("Function returns: {:?}", ret); // prints the return value
                     ret
                 } else {
                     Err(format!("Error att block evaluation"))
@@ -340,7 +330,6 @@ pub fn block_eval(block: Box<Statement>, scope: &mut Scope) -> Result<Exprs, Err
             }
         },
         Statement::Block(stmt, None) => {
-            println!("TOAST: Inne i block NONE");
             evaluate_program(stmt, scope)
         },
         _ => Err(format!("No block eval able, Error"))
@@ -349,21 +338,19 @@ pub fn block_eval(block: Box<Statement>, scope: &mut Scope) -> Result<Exprs, Err
     result
 }
 pub fn func_eval(arg_map: HashMap<String, Exprs>, block: Box<Statement>, scope: &mut Scope) -> Result<Exprs, Error> {
-    println!("TOAST: Inne i func_eval ");
     // get map of func id/val -> evaluate
     scope.addLayer(true);
     // register the symbols/variables
     for (id, ex) in arg_map.iter() {
         scope.register_symbol(&id, ex.clone(), false);
     }
-    println!("TOAST: Ska köra block eval");
     let result = block_eval(block, scope);
+    //println!("Function, {}, returns {}.", id, result);
     scope.backLayer();
     return result;
 }
 
 pub fn condition_eval(stmt: Box<Statement>, scope: &mut Scope) -> Result<Exprs, Error> {
-    println!("TOAST: Inne i cond eval ");
     match *stmt {
         Statement::Cond(AllCond::ElseIf, Some(ex), block, Some(op_next)) => {
             let ex_res = expr_eval(ex, scope);
@@ -408,14 +395,12 @@ pub fn condition_eval(stmt: Box<Statement>, scope: &mut Scope) -> Result<Exprs, 
 }
 
 pub fn evaluate_program(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<Exprs, Error> {
-    println!("TOAST: Inne i eval prog");
     let vec_len = stmts.len();
     let mut counter = 1;
     let mut deref_statements = vec![];
     for stmt in stmts {
         deref_statements.push(*stmt); // get the derefed statements so we can traverse it instead.
     }
-    println!("{}", deref_statements.clone().len());
     for stmt in &deref_statements { // register the signature of func statements
         if let Statement::Function(id, vec,_,block) = stmt {
             let mut args = vec![];
@@ -449,7 +434,6 @@ pub fn evaluate_program(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result
                 }
             },
             Statement::While(ex, block) => { // wont need borrow handling since its handled at internal parts
-                println!("TOAST: Inne i stmt while ");
                 loop { // while true, wait for break
                     let ex_res = expr_eval(ex.clone(), scope);
                     if ex_res.is_err() {
@@ -470,9 +454,7 @@ pub fn evaluate_program(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result
                 Ok(Exprs::Unit)
             },
             Statement::Let(mutable, id,_,op_e) => {
-                println!("TOAST: Inne i stmt let");
                 // no need for type check
-                println!("TOAST: Inne i Let statement ");
                 if let Some(ex) = op_e { // expression optional eval
                     let expr = *ex;
                     let ret = expr_eval(Box::new(expr), scope);
@@ -488,22 +470,17 @@ pub fn evaluate_program(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result
             },
             Statement::Function(id, vec, Some(t), block) => {
                 // only need to return unit type, only a function check
-                println!("TOAST: Inne i function statement ");
-                
-
                 Ok(Exprs::Unit)
             },
             // No return type
             Statement::Function(id, vec,None, block) => {
-                println!("TOAST: Inne i stmt func none");
                 Ok(Exprs::Unit)
             },
             Statement::Cond(AllCond::If, Some(opEx),block,Some(opNext)) => { // 
-                println!("TOAST: Inne i stmt cond some ");
                 //let Some(ex) = opEx;
                 let ex_eval = expr_eval(opEx, scope);
                 if ex_eval.is_err() { // check the expression
-                    return ex_eval;
+                    ex_eval
                 }
                 else {// go on to block check
                     let ex_value = ex_eval.unwrap();
@@ -520,7 +497,6 @@ pub fn evaluate_program(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result
             },
             //Without next statement 
             Statement::Cond(AllCond::If, Some(opEx), block,None) => {
-                println!("TOAST: Inne i smtm cond none ");
                 let ex_eval = expr_eval(opEx, scope);
                 if ex_eval.is_err() {
                     ex_eval
@@ -538,37 +514,28 @@ pub fn evaluate_program(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result
                 }
             },
             Statement::Block(_,_) => {
-                println!("TOAST: Inne i stmt block  ");
                 block_eval(Box::new(stmt), scope) // run through block evaluate function
             },
+            Statement::Exprs(exp) => {
+                expr_eval(exp, scope)
+            },
+            Statement::Program(stmt_vec) => {
+                evaluate_program(stmt_vec, scope)
+            }
 
             _ => Err(format!("Error no caught statements")),
         };
         if stmt_result.is_err() {
             return stmt_result
         }
-        if last_element {
+        /* if last_element {
             return stmt_result
-        } 
+        }  */
         
         counter += 1;
     }
     return Ok(Exprs::Unit)
         
 }
-/* pub fn evaluate(prog: Box<Statement>, scope: &mut Scope) -> Result<Exprs, Error> {
-    if let Statement::Function(_,vec,_,_,) = *prog {
-        evaluate_program(vec, scope);
-        evaluate_program(vec![Box::new(
-            Statement::Exprs(
-                Box::new(
-                    Exprs::FunctionCall("main".to_string(),vec![])
-                )
-            )
-        )], scope)
-    } else {
-        Err(format!(""))
-    }
-} */
 
 
