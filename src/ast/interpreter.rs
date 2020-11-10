@@ -6,7 +6,7 @@ use crate::ast::*;
 type Error = String;
 
 // this will most probablt look alot like the type_checker.
-
+//TODO: Implement the Notop Sub
 #[derive(Clone)]
 struct SymbolTags {
     symbolbase: Exprs,

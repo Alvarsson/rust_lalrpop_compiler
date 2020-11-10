@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 //säger att vi ska använda allt (*) ur ast.rs modulen
 use crate::ast::*;
-
+// TODO: Kan ta bort Stmts nu tror jag.
 grammar;
 match {
     // The default whitespace skipping is disabled an `ignore pattern` is specified

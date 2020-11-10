@@ -9,7 +9,6 @@ pub mod type_check;
 pub mod interp;
 pub mod interpreter;
 
-
 fn main() {
     println!("minimal");
     let part1 = "
@@ -294,18 +293,27 @@ fn test_type_check_part2() {
 #[test]
 fn parse_test() {
     let test_borrow = " 
-    fn test() {
-        fn test1(p: &String) {
-
-        }
-        fn test2(a: &mut String) {
+    fn main() {
+        fn test(a: &mut String) {
             let mut b = 'oj';
             let mut e = &mut b;
             test1(&b)
-            
         }
-        fn test3(b: &i32) -> i32 {
-            return *b + 4;
+        test();
+        fn test2(per: &i32) -> i32 {
+            let axel: i32 = 10 + 2 * 3;
+            axel = -1 - (1 - 1);
+            return axel + per;
+        }
+        fn test3(foo: bool) -> bool {
+            if foo && true || false {
+                let a = test2(5);
+                while ( a < 10) {
+                    a = a + 1;
+                }
+                return true;
+            }
+            return 5 > 7;
         }
     }
     ";
