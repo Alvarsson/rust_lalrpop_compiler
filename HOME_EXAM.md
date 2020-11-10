@@ -32,7 +32,7 @@ Stmt
     | Assign ";"?
     | Function ";"?
     | Block ";"?
-    | Exprs ";"? -> 
+    | Exprs ";"? 
     ;
 ´´´
 Let
@@ -246,7 +246,11 @@ ProgramParser::new().parse(test);
 ´´´
 to variable. Printing it gives:
 ```rust
-Ok(Program([Function("main", [], None, Block([Function("tjo", [FuncArg("p", I32)], Some(I32), Block([Let(false, "a", None, Some(Number(6))), Let(false, "b", None, Some(Number(3))), Let(false, "c", None, Some(Op(Id("a"), Add, Id("b"))))], Some(Return(Id("c"))))), Exprs(FunctionCall("tjo", [Number(4)])), Function("hoj", [], None, Block([Let(false, "k", None, Some(Number(8)))], None))], None)), Exprs(FunctionCall("main", []))]))
+Ok(Program([Function("main", [], None, Block([Function("tjo", [FuncArg("p", I32)], Some(I32),
+Block([Let(false, "a", None, Some(Number(6))), Let(false, "b", None, Some(Number(3))),
+Let(false, "c", None, Some(Op(Id("a"), Add, Id("b"))))], Some(Return(Id("c"))))),
+Exprs(FunctionCall("tjo", [Number(4)])), Function("hoj", [], None,
+Block([Let(false, "k", None, Some(Number(8)))], None))], None)), Exprs(FunctionCall("main", []))]))
 
 ´´´
 
