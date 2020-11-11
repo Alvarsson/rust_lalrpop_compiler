@@ -23,7 +23,7 @@ Program
 ```ebnf
     : Stmt+
     ;
-´´´
+```
 Stmt
 ```ebnf
     : Let ";"
