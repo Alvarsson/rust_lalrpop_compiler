@@ -246,14 +246,47 @@ ProgramParser::new().parse(test);
 ´´´
 to variable. Printing it gives:
 ```rust
-Ok(Program([Function("main", [], None, Block([Function("tjo", [FuncArg("p", I32)], Some(I32),
-Block([Let(false, "a", None, Some(Number(6))), Let(false, "b", None, Some(Number(3))),
-Let(false, "c", None, Some(Op(Id("a"), Add, Id("b"))))], Some(Return(Id("c"))))),
-Exprs(FunctionCall("tjo", [Number(4)])), Function("hoj", [], None,
-Block([Let(false, "k", None, Some(Number(8)))], None))], None)), Exprs(FunctionCall("main", []))]))
-
+Ok(Program([Function("main", [], None, Block([Function("test", [FuncArg("a", Ref(true, Str))], None,
+Block([Let(true, "b", None, Some(Str("\'oj\'"))), Let(true, "e", None, Some(Borrow(true, Id("b"))))],
+Some(Return(FunctionCall("test1", [Borrow(false, Id("b"))]))))), Exprs(FunctionCall("test", [])),
+Function("test2", [FuncArg("per", Ref(false, I32))], Some(I32), Block([Let(false, "axel", Some(I32),
+Some(Op(Number(10), Add, Op(Number(2), Mul, Number(3))))), Assign("axel", NotOp(Sub, Op(Number(1),
+Sub, Op(Number(1), Sub, Number(1)))))], Some(Return(Op(Id("axel"), Add, Id("per")))))),
+Function("test3", [FuncArg("foo", Bool)], Some(Bool), Block([Cond(If, Some(Op(Op(Id("foo"),
+And, Boolean(true)), Or, Boolean(false))), Block([Let(false, "a", None,
+Some(FunctionCall("test2", [Number(5)]))), While(Op(Id("a"), Lss, Number(10)),
+Block([Assign("a", Op(Id("a"), Add, Number(1)))], None))],
+Some(Return(Boolean(true)))), None)], Some(Return(Op(Number(5), Gtr, Number(7))))))], None)), Exprs(FunctionCall("main", []))]))
 ´´´
+Syntactically illegal input examples:
 
+This is illegal since id "1main" can't start with number.
+```rust
+fn 1main() {
+    fn tjo() -> i32 {
+        let a = 6;
+    } 
+}
+´´´
+This is illegal since we are missing a curly bracket that should close the inner function.
+```rust
+fn 1main() {
+    fn tjo() -> i32 {
+        let a = 6;
+     
+}
+´´´
+The showcase and EBNF above defines a subset of the complete Rust language. In comparison the course requirements the following has been met:
+- Function definitions with both explicit and implicit return types.
+- Statements: let, assign, if, else if, else, while, block, expressions, return(implicit/explicit).
+- Expressions handle function calls, which can act as both explicit or implicit returns.
+- Primitive types: boolean and i32.
+- Operands and logical operands with correct evaluated precedence.
+- Borrowing symbols for allowed statements. 
+
+Future implementations:
+- Error handling, including trace back to error location.
+- More primitive types.
 
 ## Your semantics
 
@@ -264,6 +297,17 @@ Block([Let(false, "k", None, Some(Number(8)))], None))], None)), Exprs(FunctionC
 - For your implementation, give a program (or set of test programs) that cover all the semantics of your language that you have successfully implemented. (Maybe a subset of the input language accepted by the grammar.)
 
 - Compare your solution to the requirements (as stated in the README.md). What are your contributions to the implementation.
+
+A transition rule is written as:
+```math
+\frac{<c1,σ> ⇓ σ' <c2,σ'> ⇓ σ''}{<c1;c2,σ> ⇓ σ''}
+```
+
+
+
+
+
+
 
 ## Your type checker
 
