@@ -363,6 +363,7 @@ examples:
 ```
 ### General command sequence
 ![](../restart/images/cmdSeq.png)
+
 Close to the let statement semantic, executing the first, then the second command as to not loose the intermediate derived state.
 
 examples:
@@ -372,6 +373,7 @@ func();
 ```
 ### Function sequence
 Basic function sequence from one state to derived state in the context of the called function.
+
 ![](../restart/images/funcSeq.png)
 
 examples:
@@ -382,24 +384,52 @@ fn main() {
 ```
 ### Conditionals true and false
 ![](../restart/images/condT.png);
+
 ![](../restart/images/condF.png)
 
 example:
 ```rust
 if a > 6 {
-    ...
+    c = c + 5;
 }
 ```
 ### While-loop
 For while-false exiting with same state.
+
 ![](../restart/images/whileF.png);
+
 And for while-true, concluding in derived state since block code executes.
+
 ![](../restart/images/whileT.png);
 
 example:
 ```rust
 while a > 6 {
-    ...
+    a -= 1;
+}
+```
+### Return statement
+Explicit return has the semantic,
+
+![](../restart/images/retE.png),
+
+which brings the return expression with the state.
+
+Implicit return has the semantic,
+
+![](../restart/images/retI.png),
+
+but this does not carry the expression with the state.
+
+### Assign statement
+Since the variable has no state change and only moves the expression with the state we get conclusion,
+
+![](../restart/images/ass.png)
+
+example:
+```rust
+x = 5; 
+x = b;
 }
 ```
 
