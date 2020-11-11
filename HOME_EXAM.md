@@ -430,7 +430,6 @@ example:
 ```rust
 x = 5; 
 x = b;
-}
 ```
 
 ## Your type checker
@@ -442,6 +441,60 @@ x = b;
 - For your implementation, give a set of programs demonstrating that ill-typed programs are rejected, connect back to the Type Checking Rules to argue why these are illegal and thus should be rejected.
 
 - Compare your solution to the requirements (as stated in the README.md). What are your contributions to the implementation.
+
+### My type checker semantics
+The types defined as possible returns are:
+- bool
+- i32
+- unit -> "()"
+
+### Let sequence
+Let statements in the type checker is divided into type i32 and type bool.
+
+Type i32, carrying the type with the state:
+
+![](../restart/images/typeLeti.png).
+
+example:
+```rust
+let x : i32 = 5; 
+let x = b; // given that b must be of type i32.
+```
+
+Type bool does the same and carries the type bool with the state:
+
+example:
+```rust
+let x : bool = false; 
+let x = b; // given that b must be of type bool.
+```
+
+### Type i32 operands
+Obviously these must evaluate to type i32 and the same operands is in play as the arithmetic operands.
+
+![](../restart/images/typeIop.png).
+
+example:
+```rust
+2-9; 
+5*9;
+```
+
+For boolean type operands, the same operand symbols as in boolean expression operands is true and follows the same semantics as for
+type i32 operands above.
+
+example:
+```rust
+2 < 5; 
+8 == 8;
+```
+
+
+### Illegal examples and why
+
+
+
+
 
 ## Your borrrow checker
 
