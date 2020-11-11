@@ -316,6 +316,7 @@ fn parse_test() {
             return 5 > 7;
         }
     }
+    main();
     ";
     //println!("{:?}", StmtsParser::new().parse(test_borrow));
     let part1 = "
@@ -371,21 +372,12 @@ fn parse_test() {
         }
 
     }";
-    println!("{:?}", StmtsParser::new().parse(part2));
+    //println!("{:?}", ProgramParser::new().parse(part2));
     let test_string = "
     fn main() {
         fn tjo(p:i32) -> i32 {
-            let a = 6;
-            let b = 3;
-            let c = a + b;
-            return c;
-        }
-        tjo(4);
-        fn hoj() {
-            let k = 8;
-        }
-    }
-    main();
+            let a = 5;
+    } 
     ";
     println!("{:?}", ProgramParser::new().parse(test_string));
 }
