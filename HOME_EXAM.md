@@ -299,8 +299,20 @@ Future implementations:
 - Compare your solution to the requirements (as stated in the README.md). What are your contributions to the implementation.
 
 A transition rule is written as:
-![](https://github.com/Alvarsson/rust_lalrpop_compiler/blob/[branch]/image.jpg?raw=true)
 
+![](../restart/images/transRule.png)
+
+Using the following symbols to describe the Structural Operational Semantics:
+- e: expression
+- x: variable
+- ⇓, evaluates
+- σ, store
+- σ', derived store
+
+Expressions can be the following:
+- b, boolean 
+- n, number
+- f, function 
 
 
 
