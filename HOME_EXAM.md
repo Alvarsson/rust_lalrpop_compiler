@@ -270,7 +270,7 @@ fn 1main() {
 ```
 This is illegal since we are missing a curly bracket that should close the inner function.
 ```rust
-fn 1main() {
+fn main() {
     fn tjo() -> i32 {
         let a = 6;
      
@@ -298,26 +298,110 @@ Future implementations:
 
 - Compare your solution to the requirements (as stated in the README.md). What are your contributions to the implementation.
 
+### My semantics
+The granularity of the SOS is in small-step, this allows for reduction for each step. 
 A transition rule is written as:
 
 ![](../restart/images/transRule.png)
 
 Using the following symbols to describe the Structural Operational Semantics:
-- e: expression
-- x: variable
+- e ∈ expression
+- x ∈ variable
+- op ∈ Op
 - ⇓, evaluates
-- σ, store
-- σ', derived store
+- σ, state
+- σ', derived state
 
 Expressions can be the following:
-- b, boolean 
-- n, number
-- f, function 
+- b ∈ Bool 
+- n ∈ Num
+- id ∈ Id
+- st ∈ Str
+- fc ∈ FunctionCall 
 
+### Let sequence
+![](../restart/images/letimg.png)
 
+examples:
+```rust
+let a : i32 = 5;
+let b : bool = false;
+let c : i32 = func();
+```
+For let statements, state will change to derived state if variable already is declared. Otherwise is set to the state.
 
+### Arithmetic expressions operands
+The choice of arithmetic operands are
+- "+", addition
+- "-", subtraction
+- "*", multiplication
+- "/", division
 
+![](../restart/images/ariOp.png)
 
+examples:
+```rust
+ 4 + 5;
+ 6 / 2;
+```
+### Boolean expressions operands
+The choice of arithmetic operands are
+- "==", equal to
+- "!=", not equal to
+- ">", larger than
+- "<", smaller than
+- ">=", larger or equal to
+- "<=", smaller or equal to 
+
+![](../restart/images/boolOp.png)
+
+examples:
+```rust
+ 5 < 7;
+ 2 == 2;
+ b != 9;
+```
+### General command sequence
+![](../restart/images/cmdSeq.png)
+Close to the let statement semantic, executing the first, then the second command as to not loose the intermediate derived state.
+
+examples:
+```rust
+let x = 9;
+func();
+```
+### Function sequence
+Basic function sequence from one state to derived state in the context of the called function.
+![](../restart/images/funcSeq.png)
+
+examples:
+```rust
+fn main() {
+    func();
+}
+```
+### Conditionals true and false
+![](../restart/images/condT.png);
+![](../restart/images/condF.png)
+
+example:
+```rust
+if a > 6 {
+    ...
+}
+```
+### While-loop
+For while-false exiting with same state.
+![](../restart/images/whileF.png);
+And for while-true, concluding in derived state since block code executes.
+![](../restart/images/whileT.png);
+
+example:
+```rust
+while a > 6 {
+    ...
+}
+```
 
 ## Your type checker
 
