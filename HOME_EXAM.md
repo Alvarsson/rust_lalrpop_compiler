@@ -299,9 +299,7 @@ Future implementations:
 - Compare your solution to the requirements (as stated in the README.md). What are your contributions to the implementation.
 
 A transition rule is written as:
-```math
-\frac{<c1,σ> ⇓ σ' <c2,σ'> ⇓ σ''}{<c1;c2,σ> ⇓ σ''}
-```
+![](https://github.com/Alvarsson/rust_lalrpop_compiler/blob/[branch]/image.jpg?raw=true)
 
 
 
