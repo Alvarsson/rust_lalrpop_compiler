@@ -34,86 +34,86 @@ Stmt
     | Block ";"?
     | Exprs ";"? 
     ;
-´´´
+```
 Let
 ```ebnf
     : "let" "mut"? Id (":" Type)? ("=" Exprs)?
     ;
-´´´
+```
 Cond
 ```ebnf
     : "if" Exprs Block NextCond?
     ;
-´´´
+```
 NextCond
 ```ebnf
     : ElseIf
     | Else
     ;
-´´´
+```
 ElseIf
 ```ebnf
     : "else if" Exprs Block NextCond?
     ;
-´´´
+```
 Else
 ```ebnf
     : "else" Block
     ;
-´´´
+```
 Block
 ```ebnf
     : "{" Stmt* Return? "}" 
     ;
-´´´
+```
 While
 ```ebnf
     : "while" Exprs Block
     ;
-´´´
+```
 Assign
 ```ebnf
     : Id "=" Exprs?
     ;
-´´´
+```
 Return
 ```ebnf
     : Exprs
     | "return" Exprs ";"?
     ;
-´´´
+```
 Function
 ```ebnf
     : "fn" Id "(" FuncMacro ")" ("->" Type)? Block
     | "fn" Id "()" ("->" Type)? Block
     ;
-´´´
+```
 FuncMacro
 ```ebnf
     : FuncArgSep<FuncArg>
     ;
-´´´
+```
 FuncArgSep
 ```ebnf
     : (<arg> ",")* arg?
     ;
-´´´
+```
 FuncArg
 ```ebnf
     :Id ":" Type
     ;
-´´´
+```
 FunctionCall
 ```ebnf
     : Id "(" CallMacro ")"
     | Id "()"
     ;
-´´´
+```
 CallMacro
 ```ebnf
     : FuncArgSep<Exprs>
     ;
-´´´
+```
 Type
 ```ebnf
     : "bool"
@@ -123,31 +123,31 @@ Type
     | "&" Type
     | "&mut" Type
     ;
-´´´
+```
 NotOp
 ```ebnf
     : "!"
     | "-"
     ;
-´´´
+```
 FacOp
 ```ebnf
     : "*"
     | "/"
     ;
-´´´
+```
 ExpOp
 ```ebnf
     : "+"
     | "-"
     ;
-´´´
+```
 LogOp
 ```ebnf
     : "&&"
     | "||"
     ;
-´´´
+```
 RelOp
 ```ebnf
     : "=="
@@ -157,13 +157,13 @@ RelOp
     | ">="
     | "<="
     ;
-´´´
+```
 Exprs
 ```ebnf
     : NotOp Expr
     | Expr
     ;
-´´´
+```
 Expr
 ```ebnf
     : Expr LogOp Factor
@@ -171,13 +171,13 @@ Expr
     | Expr ExpOp Factor
     | Factor
     ;
-´´´
+```
 Factor
 ```ebnf
     : Factor FacOp Term
     | Term
     ;
-´´´
+```
 Term
 ```ebnf
     : Bool
@@ -190,28 +190,28 @@ Term
     | FunctionCall
     | "(" Exprs ")"
     ;
-´´´
+```
 Num
 ```ebnf
     : r"[0-9]+"
     ;
-´´´
+```
 Id
 ```ebnf
     : r"([a-z_]|[A-Z])([a-z]|[A-Z]|[0-9]|_)*"
     ;
-´´´
+```
 Str
 ```ebnf
     : r"'(.*)'"
     ;
-´´´
+```
 Bool
 ```ebnf
     : "true"
     | "false"
     ;
-´´´
+```
 Showcase
 ```rust
 fn main() {
@@ -238,12 +238,12 @@ fn main() {
     }
 }
 main();
-´´´
+```
 Inputing the code above into a string, say "test".
 Set output from,
 ```rust
 ProgramParser::new().parse(test);
-´´´
+```
 to variable. Printing it gives:
 ```rust
 Ok(Program([Function("main", [], None, Block([Function("test", [FuncArg("a", Ref(true, Str))], None,
@@ -257,7 +257,7 @@ And, Boolean(true)), Or, Boolean(false))), Block([Let(false, "a", None,
 Some(FunctionCall("test2", [Number(5)]))), While(Op(Id("a"), Lss, Number(10)),
 Block([Assign("a", Op(Id("a"), Add, Number(1)))], None))],
 Some(Return(Boolean(true)))), None)], Some(Return(Op(Number(5), Gtr, Number(7))))))], None)), Exprs(FunctionCall("main", []))]))
-´´´
+```
 Syntactically illegal input examples:
 
 This is illegal since id "1main" can't start with number.
@@ -267,7 +267,7 @@ fn 1main() {
         let a = 6;
     } 
 }
-´´´
+```
 This is illegal since we are missing a curly bracket that should close the inner function.
 ```rust
 fn 1main() {
@@ -275,7 +275,7 @@ fn 1main() {
         let a = 6;
      
 }
-´´´
+```
 The showcase and EBNF above defines a subset of the complete Rust language. In comparison the course requirements the following has been met:
 - Function definitions with both explicit and implicit return types.
 - Statements: let, assign, if, else if, else, while, block, expressions, return(implicit/explicit).
