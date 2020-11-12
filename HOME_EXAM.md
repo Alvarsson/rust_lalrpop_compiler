@@ -623,7 +623,7 @@ example Let:
 let x : i32 = true; 
 ```
 
-## Your borrrow checker
+## Your borrow checker
 
 - Give a specification for well versus ill formed borrows. (What are the rules the borrow checker should check).
 
@@ -683,18 +683,23 @@ fn test() {
 
 The examples above demonstrates a general type of ill formed borrowing and dereferencing that the borrow checker detects and reject.
 
-The borrow checker, just as with the type checker and interpreter, is included in scope layer handling. That meaning that variables, references and values is scope layer dependent. The generel formulat
+The borrow checker, just as with the type checker and interpreter, is included in scope layer handling. That meaning that regular variables and values are scope layer specific
+With referencing variables we can borrow values in different scopes without affecting the original variable value.
+
+## Contribution summary
+
+This code has gone through sevaral iterations with influence from other developers during the whole project. The influence regards types of implementation options but everything is built on the base of the parser and AST. The parser structure originates from the calculator example in the lalrpop git page.
 
 ## Overall course goals and learning outcomes.
 
 Comment on the alignment of the concrete course goals (taken from the course description) to the theory presented, work You have done and knowledge You have gained. (I have put some comments in [...]).
 
 - Lexical analysis, syntax analysis, and translation into abstract syntax.
-
+    - 
 - Regular expressions and grammars, context-free languages and grammars, lexer and parser generators. [lalr-pop is a classical parser generator, it auto generated the lexer for you based on regular expressions but allows for you to define the lexer yourself for more control]
 
 - Identifier handling and symbol table organization. Type-checking, logical inference systems. [SOS is a logical inference system]
-
+    - 
 - Intermediate representations and transformations for different languages. [If you attended, Recall lectures relating LLVM/Crane-lift, discussions on SSA (Single Static Assignment) used in LLVM/Crane-lift, and discussions/examples on high [level optimization](https://gitlab.henriktjader.com/pln/d7050e_2020/-/tree/generics_and_traits/examples)]
 
 - Code optimization and register allocation. Machine code generation for common architectures. [Both LLVM/Crane-Lift does the "dirty work" of backend optimization/register allocation leveraging the SSA form of the LLVM-IR]
