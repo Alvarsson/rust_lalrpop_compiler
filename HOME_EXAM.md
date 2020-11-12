@@ -443,12 +443,15 @@ x = b;
 - Compare your solution to the requirements (as stated in the README.md). What are your contributions to the implementation.
 
 ### My type checker semantics
+
 The types defined as possible returns are:
+
 - bool
 - i32
 - unit -> "()"
 
 ### Let sequence
+
 Let statements in the type checker is divided into type i32 and type bool.
 
 Type i32, carrying the type with the state:
@@ -470,6 +473,7 @@ let x = b; // given that b must be of type bool.
 ```
 
 ### Type i32 operands
+
 Obviously these must evaluate to type i32 and the same operands is in play as the arithmetic operands.
 
 ![](../restart/images/typeIop.png).
@@ -489,12 +493,135 @@ example:
 8 == 8;
 ```
 
+### Conditional statements
+
+The conditional statements are the same for both true and false regarding the semantics.
+
+![](../restart/images/typeIf.png).
+
+example:
+```rust
+if true {
+    ...
+}
+```
+
+### While statements
+
+Just like the conditionals, while statement semtantics are the same for both true and false.
+
+![](../restart/images/typeWhile.png).
+
+The derived state will be evaluated as long as condition is of type boolean.
+
+example:
+```rust
+while 5 > i {
+    ...
+}
+```
+
+### Return statements
+
+The return statements for either type i32 or bool has the same semantics but obviously resulting in different types.
+
+Their semantics are the following but foor bool we switch the i32 to bool.
+
+![](../restart/images/typeRet.png).
+
+examples:
+```rust
+return 5;
+return false;
+```
+
+### Assign statement
+
+As the previous statement semantics the assign types have the same semantic form.
+
+![](../restart/images/typeAss.png).
+
+The conclusion will be that the state carries the variable type.
+
+examples:
+```rust
+x = true;
+x = 5 + 5;
+```
+
+### Unit type 
+
+The default return type of function is unit.
+
+![](../restart/images/typeUnit.png).
+
+examples:
+```rust
+fn main() -> () {
+    func();
+}
+fn main() { // default to return unit
+    ...
+}
+```
+
+The function return type is held in the scope(environment) as to check that the correct block/layer returns the asked for type.
+
+The type checker evaluates for each practical requirement in the course, as well as with borrowing references.
 
 ### Illegal examples and why
 
+This function has the assigned return type set to i32 but the function block returns a unit type.
 
+example Function return:
+```rust
+fn main() -> i32 {
+    func();
+}
+```
 
+Can't assign a variable to the unit type, must be either type bool or i32 in the type checker.
 
+example Assign:
+```rust
+let x : i32 = 5;
+x = ();
+```
+
+The while condition needs to be of type bool. Can't be a terminal number or an expression.
+
+example While:
+```rust
+while 5 + 3 {
+    let a = 5;
+    ...
+}
+```
+
+Can't evaluate the if conditional to the type unit as a correct value.
+
+example If
+```rust
+if () {
+    let a = 5;
+    ...
+}
+```
+
+Arithmetic expression must be of the same type. Can not use arithmetic operator between different types. 
+
+example Arithmetic expression:
+```rust
+2-true; 
+5 < false;
+```
+
+The Let statement with a explicit variable type must evaluate to the same type.
+
+example Let:
+```rust
+let x : i32 = true; 
+```
 
 ## Your borrrow checker
 
@@ -504,13 +631,59 @@ example:
 
 - Compare your solution to the requirements (as stated in the README.md). What are your contributions to the implementation.
 
-## Your LLVM/Crane-Lift backend (optional)
+### Well formed borrows
 
-- Let your backend produce LLVM-IR/Crane Lift IR for an example program (covering the translations implemented).
+Well formed borrows follows the general syntax that Rust implements. Some examples are:
 
-- Describe the translation process, and connect back to the generated IR.
+example Good borrows, borrow-mut and dereference:
+```rust
+fn borrow_function() {
+    let b = 'test';
+    let c= &b;
+}
+fn borrow_mut_function() {
+    let mut b = 'test':
+    let mut c = &mut b;
+}
+fn deref_function(b: &i32) {
+    return *b + 4;
+}
+```
 
-- Compare your solution to the requirements (as stated in the README.md). What are your contributions to the implementation.
+### Ill formed borrows
+
+Can only borrow a variable.
+
+example Ill formed borrows:
+```rust
+fn test() {
+    let s = &'hej';
+} 
+```
+
+Can't borrow as mutable since s is not declared as mutable.
+
+example Ill formed mutable borrows:
+```rust
+fn test() {
+    let s = 'hej';
+    let b = &mut s;
+} 
+```
+
+Can't dereference variable that isn't a reference.
+
+example Ill formed dereference:
+```rust
+fn test() {
+    let s = 'hej';
+    let b = *s;
+} 
+```
+
+The examples above demonstrates a general type of ill formed borrowing and dereferencing that the borrow checker detects and reject.
+
+The borrow checker, just as with the type checker and interpreter, is included in scope layer handling. That meaning that variables, references and values is scope layer dependent. The generel formulat
 
 ## Overall course goals and learning outcomes.
 
