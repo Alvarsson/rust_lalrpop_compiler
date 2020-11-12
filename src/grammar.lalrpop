@@ -1,7 +1,0 @@
-use std::str::FromStr;
-
-grammar;
-
-pub Id: String = {
-    r"([a-z]|[A-Z])([a-z]|[A-Z]|[0-9]|_)*" => String::from_str(<>).unwrap(),
-};
