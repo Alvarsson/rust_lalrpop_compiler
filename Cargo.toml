@@ -21,9 +21,5 @@ name = "minimal"
 path = "src/minimal/main.rs"
 
 [[bin]]
-name = "comments"
-path = "src/comments/main.rs"
-
-[[bin]]
 name = "ast"
 path = "src/ast/main.rs"

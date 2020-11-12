@@ -2,9 +2,8 @@ use std::str::FromStr;
 
 //säger att vi ska använda allt (*) ur ast.rs modulen
 use crate::ast::*;
-
+// TODO: Kan ta bort Stmts nu tror jag.
 grammar;
-
 match {
     // The default whitespace skipping is disabled an `ignore pattern` is specified
     r"\s*" => { }, 
@@ -12,174 +11,204 @@ match {
     r"//[^\n\r]*" => { }, 
     // Skip `/* comments */`
     r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { },  
+    "i32",
+    "bool",
+    "String",
+    "{",
+    "}",
+    "()",
+    "(",
+    ")",
+    ";",
+    "-",
+    "+",
+    "*",
+    "/",
+    ",",
+    "!",
+    "&&",
+    "||",
+    "==",
+    "=",
+    "<",
+    ">",
+    ":",
+    "true",
+    "false",
+    "fn",
+    "while",
+    "if",
+    "else",
+    "else if",
+    "return",
+    "let",
+    "&",
+    "&mut",
+    "mut",
+    r"[0-9]+",
+    r"([a-z_]|[A-Z])([a-z]|[A-Z]|[0-9]|_)*",
+    "->",
+    r"'(.*)'",
     _
 }
 
-pub NumOrId : NumOrId = {
-    Num => NumOrId::Num(<>),
-    Id => NumOrId::Id(<>),
+
+//------REG------
+pub Num: i32 = {
+    r"[0-9]+" => i32::from_str(<>).unwrap(),
 };
 
-//------EXPR------
-pub Expr: Box<Expr> = {
-    Expr ExprOp Factor => Box::new(Expr::Op(<>)),
-    Expr LogicalOp Factor => Box::new(Expr::Op(<>)),
-    Expr RelationOp Factor => Box::new(Expr::Op(<>)),
-    //NotExp Expr => Box::new(Expr::NotExpression(<>))
-    Factor,
+pub Id: String = {
+    r"([a-z_]|[A-Z])([a-z]|[A-Z]|[0-9]|_)*" => String::from_str(<>).unwrap(),
 };
 
-
-
-//------OP------
-ExprOp: Op = {
-    "+" => Op::ADD,
-    "-" => Op::SUB,
+pub Str: String = {
+    r"'(.*)'" => String::from_str(<>).unwrap(),
 };
 
-LogicalOp: Op = {
-    "&&" => Op::AND,
-    "||" => Op::OR,
-};
+//pub FuncIdent: String = {
+//    r"([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*\(" => String::from_str(<>).unwrap(),
+//};
 
-RelationOp: Op = {
-    "==" => Op::EQ,
-    "!=" => Op::NEQ,
-    ">" => Op::GTR,
-    "<" => Op::LSS,
-    ">=" => Op::GEQ,
-    "<=" => Op::LEQ,
-};
-
-Not: Op = {
-    "!" => Op::NOT,
-};
-
-//------FACTOR------
-pub Factor: Box<Expr> = { //
-    Factor FactorOp Term => Box::new(Expr::Op(<>)),
-    Term,
-};
-
-FactorOp: Op = {
-    "*" => Op::MUL,
-    "/" => Op::DIV,
-};
-
-//------TERM------
-pub Term: Box<Expr> = {
-    Num => Box::new(Expr::Number(<>)),
-    Id => Box::new(Expr::Identifier(<>)),
-    Bool => Box::new(Expr::Boolean(<>)),
-    <Not> <Term> => Box::new(Expr::NotEx(<>)),
-    //<FunctionCall> => Box::new(Expr::FCall(<>)),
-    "(" <Expr> ")",
-};
-
-//------TYPE------
-Type: Type = {
-    "bool" => Type::Bool,
-    "i32" => Type::I32,
-    "()" => Type::Unit,
-};
-
-//------BOOL------
-Bool: bool = {
+pub Bool: bool = {
     "true" => true,
     "false" => false,
 };
 
+//-----Expressions-----
+pub Exprs: Box<Exprs> = {
+    NotOp Expr => Box::new(Exprs::NotOp(<>)), // For Not(Expression)
+    Expr,
+};
 
-//------STATEMENT------
-pub Stmt: Box<Statement> = {
-    Let,
-    ReturnWith,
-    ReturnWithout,
-    Cond,
-    Block,
-    While,
-    Assign,
-    Function,
+pub Expr: Box<Exprs> = {
+    Expr LogOp Factor => Box::new(Exprs::Op(<>)),
+    Expr RelOp Factor => Box::new(Exprs::Op(<>)),
+    Expr ExpOp Factor => Box::new(Exprs::Op(<>)),
+    Factor,
+};
+
+pub Factor: Box<Exprs> = {
+    Factor FacOp Term => Box::new(Exprs::Op(<>)),
+    Term,
+};
+
+pub Term: Box<Exprs> = { 
+    Bool => Box::new(Exprs::Boolean(<>)),
+    Num => Box::new(Exprs::Number(<>)),
+    Id => Box::new(Exprs::Id(<>)),
+    Str => Box::new(Exprs::Str(<>)),
+    "&" <Term> => Box::new(Exprs::Borrow(false, <>)),
+    "&mut" <Term> => Box::new(Exprs::Borrow(true, <>)),
+    "*" <Term> => Box::new(Exprs::DeRef(<>)),
     FunctionCall,
-};
-
-//------LET------
-Let: Box<Statement> = { // 
-    "let" "mut" <id:Id> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opcall:FunctionCall?> => Box::new(Statement::Let(id,true,atype,opexpr,opcall)),
-
-    "let" <id:Id> <atype:(":" <Type>)?> "=" <opexpr:(<Expr>)?> <opcall:FunctionCall?> => Box::new(Statement::Let(id,false,atype,opexpr,opcall)),
-};
-
-//------RETURN ------
-ReturnWith: Box<Statement> = {
-    "return" <expr:(<Expr>)> => Box::new(Statement::ReturnWith(expr))
-};
-ReturnWithout: Box<Statement> = {
-    <expr:(<Expr>)> => Box::new(Statement::ReturnWithout(expr))
-};
-
-//------BLOCK------
-Block: Box<Statement> = { 
-    "{" <st:StmtVector> "}" => Box::new(Statement::Block(st))
-};
-
-StmtVector = BlockVector<InBlock>;
-
-InBlock: Box<Stmts> = {
-    <st:Stmt> => Box::new(Stmts::MulStatement(st))
-};
-
-BlockVector<st>: Vec<st> = {
-    <d:(<st> ";")*> <ext:st?> => match ext {
-        None => d,
-        Some(ext) => {
-            let mut d = d;
-            d.push(ext);
-            d
-        } 
-    }
+    "(" <Exprs> ")",
 };
 
 
+//----Operands----
 
-//------CONDITIONS------
+
+NotOp: Op = {
+    "!" => Op::Not,
+    "-" => Op::Sub,
+};
+
+FacOp: Op = {
+    "*" => Op::Mul,
+    "/" => Op::Div,
+};
+
+ExpOp: Op = {
+    "+" => Op::Add,
+    "-" => Op::Sub,
+};
+
+LogOp: Op = {
+    "&&" => Op::And,
+    "||" => Op::Or,
+};
+
+RelOp: Op = {
+    "==" => Op::Eq,
+    "!=" => Op::Neq,
+    ">" => Op::Gtr,
+    "<" => Op::Lss,
+    ">=" => Op::Geq,
+    "<=" => Op::Leq,
+};
+
+Type: Type = {
+    "bool" => Type::Bool,
+    "i32" => Type::I32,
+    "()" => Type::Unit,
+    "String" => Type::Str,
+    "&" <Type> => Type::Ref(false, Box::new(<>)), // force type Type on these
+    "&mut" <Type> => Type::Ref(true, Box::new(<>)),
+};
+
+pub Stmt: Box<Statement> = {
+    <Let> ";",
+    <Cond> ";"?,
+    <While> ";"?,
+    <Assign> ";",
+    <Function> ";"?,
+    <Block> ";"?, // maybe?
+    <Exprs> ";" => Box::new(Statement::Exprs(<>)), // TOAST: ADDED
+};
+
+pub Stmts: Box<Statement> = {
+    <vec_s: Stmt> => vec_s,
+}
+
+Let: Box<Statement> = {
+    "let" <opmut: "mut"?> <id:Id> <atype:(":" <Type>)?> <opexp:("=" <Exprs>)?> => Box::new(Statement::Let(opmut.is_some(),id, atype, opexp)),
+};
+
+//------Conditions------
 Cond: Box<Statement> = {
-    "if" <expr:Expr> <block:Block> <opcond:FollowUpCond?> => Box::new(Statement::Cond(AllCond::If, Some(expr),block,opcond))
+    "if" <exp: Exprs> <block:Block> <opcond:NextCond?> => Box::new(Statement::Cond(AllCond::If,Some(exp),block,opcond)),
 };
 
-FollowUpCond: Box<Statement> = {
+NextCond: Box<Statement> = {
     ElseIf,
     Else,
 };
 
 ElseIf: Box<Statement> = {
-    "else if" <expr:Expr> <block:Block> <opcond:FollowUpCond?> => Box::new(Statement::Cond(AllCond::ElseIf,Some(expr),block,opcond))
+    "else if" <exp:Exprs> <block:Block> <opcond:NextCond?> => Box::new(Statement::Cond(AllCond::ElseIf,Some(exp), block, opcond)),
 };
 
 Else: Box<Statement> = {
-    "else" <block:Block> => Box::new(Statement::Cond(AllCond::Else,None,block,None))
+    "else" <block:Block> => Box::new(Statement::Cond(AllCond::Else,None,block,None)),
 };
 
+Block: Box<Statement> = {
+    "{" <st: Stmt*>  <r:Return?>"}" => Box::new(Statement::Block(st,r))
+};
 
-//------WHILE------
 While: Box<Statement> = {
-    "while" <expr:Expr> <block:Block> => Box::new(Statement::While(expr,block))
+    "while" <exp:Exprs> <block:Block> => Box::new(Statement::While(exp,block))
 };
 
-//------ASSIGN------
 Assign: Box<Statement> = {
-    <id:Id> "=" <expr:Expr> => Box::new(Statement::Assign(id,expr))
+    <id:Id> "=" <exp:Exprs> => Box::new(Statement::Assign(id,exp))
 };
 
-//------FUNCTION------
+Return: Box<Statement> = {
+    <Exprs> => Box::new(Statement::Return(<>)),
+    "return" <Exprs> ";"? => Box::new(Statement::Return(<>)), 
+};
+
+// -----Functions----
 Function: Box<Statement> = {
-    "fn" <id:Id> "(" <arg:HaveFuncArg> ")" <typ:("->" <Type>)?> <block:Block> => Box::new(Statement::Function(id,arg,typ,block)), //frickin' args
-    "fn" <id:Id> "()" <typ:("->" <Type>)?> <block:Block> => Box::new(Statement::Function(id,vec![],typ,block)), // no args
+    "fn" <id:Id> "(" <arg:FuncMacro> ")" <typ:("->" <Type>)?> <block:Block> => Box::new(Statement::Function(id, arg,typ,block)), //frickin args
+    "fn" <id:Id> "()" <typ:("->" <Type>)?> <block:Block> => Box::new(Statement::Function(id,vec![],typ,block)), //no args
 };
 
-HaveFuncArg = FuncArguments<FuncArg>;
+FuncMacro = FuncArgSep<FuncArg>;
 
-FuncArguments<arg>: Vec<arg> = {
+FuncArgSep<arg>: Vec<arg> = {
     <d:(<arg> ",")*> <ext:arg?> => match ext {
         Some(ext) => {
             let mut d = d;
@@ -190,26 +219,17 @@ FuncArguments<arg>: Vec<arg> = {
     }
 };
 
-FuncArg: Box<ArgVariable> = {
-    <id:Id> ":" <typ:Type> => Box::new(ArgVariable::Argument(id,typ))
+FuncArg: Box<Statement> = {
+    <id:Id> ":" <typ:Type> => Box::new(Statement::FuncArg(id,typ)),
 };
 
-FunctionCall: Box<Statement> = {
-    <id:Id> "(" <arg:HaveFuncCall> ")" => Box::new(Statement::FunctionCall(id,arg))
+FunctionCall: Box<Exprs> = { //Ful-lösning med FuncIdent
+     <id:Id> "(" <mac:CallMacro> ")" => Box::new(Exprs::FunctionCall(id,mac)),
+     <id:Id> "()" => Box::new(Exprs::FunctionCall(id, vec![])) //TOAST: ADDING
 };
+CallMacro = FuncArgSep<Exprs>;
 
-HaveFuncCall = FuncArguments<Exprs>;
-
-pub Exprs: Box<Exprs> = {
-    <ex:Expr> => Box::new(Exprs::Expressions(ex))
+pub Program: Box<Statement> = {
+    <stmt:Stmt+> => Box::new(Statement::Program(stmt)) 
 }
-
-//------REG------
-pub Num: i32 = {
-    r"[-]?[0-9]+" => i32::from_str(<>).unwrap(),
-};
-
-pub Id: String = {
-    r"([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*" => String::from_str(<>).unwrap(),
-};
 

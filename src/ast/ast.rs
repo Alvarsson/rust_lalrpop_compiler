@@ -1,65 +1,92 @@
 // ast
 use std::fmt;
 
-#[derive(Debug)] // debug-attribut, ungefär som arv i Java
-pub enum NumOrId {
-    Num(i32),
-    Id(String),
+#[derive(Debug,PartialEq, Clone)]
+pub enum Exprs {
+    Boolean(bool), // true/false
+    Number(i32), // 3
+    Id(String), // a(...)
+    NotOp(Op, Box<Exprs>), // !
+    Op(Box<Exprs>, Op, Box<Exprs>), // && ...
+    FunctionCall(String, Vec<Box<Exprs>>), // a(x,y)
+    DeRef(Box<Exprs>), // *
+    Borrow(bool, Box<Exprs>), //bool for mut or not, &
+    Str(String), // "hello"
+    Unit,
 }
-pub type Id = String;
-impl fmt::Display for NumOrId {
 
+impl fmt::Display for Exprs {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            NumOrId::Num(i) => write!(f, "{}", i)?,
-            NumOrId::Id(s) => write!(f, "{}", s)?,
+            Exprs::Number(i) => write!(f, "{}", i)?,
+            Exprs::Id(s) => write!(f, "{}", s)?,
+            Exprs::Boolean(b) => write!(f, "{}", b)?,
+            Exprs::NotOp(not,exp) => write!(f, "{}{}",not,exp)?,
+            Exprs::FunctionCall(s,vec) => { 
+                write!(f, "{}", s)?;
+                for (i,v) in vec.iter().enumerate() {
+                    write!(f,"{}", v)?;
+                    if i < vec.len()-1 {
+                        write!(f, "")?;
+                    }
+                }
+            }
+            Exprs::Op(expr,op,expr2) => write!(f, "({} {} {})", expr, op, expr2)?,
+            Exprs::DeRef(expr) => write!(f, "{}", expr)?,
+            Exprs::Borrow(true,expr) => write!(f, "&mut {}",expr)?,
+            Exprs::Borrow(false, expr) => write!(f, "&{}", expr)?,
+            Exprs::Str(st) => write!(f,"\"{}\"", st)?,
+            Exprs::Unit => write!(f, "{}", "()")?,
         };
         Ok(())
     }
-}
+} 
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq, Copy, Clone)]
 pub enum Op {
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    AND,
-    OR,
-    EQ,
-    NEQ,
-    GTR,
-    LSS,
-    GEQ,
-    LEQ,
-    NOT,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    And,
+    Or,
+    Eq,
+    Neq,
+    Gtr,
+    Lss,
+    Geq,
+    Leq,
+    Not,
 }
 impl fmt::Display for Op {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Op::ADD => write!(f, "{}", "+")?,
-            Op::SUB => write!(f, "{}", "-")?,
-            Op::MUL => write!(f, "{}", "*")?,
-            Op::DIV => write!(f, "{}", "/")?,
-            Op::AND => write!(f, "{}", "&&")?,
-            Op::OR => write!(f, "{}", "||")?,
-            Op::EQ => write!(f, "{}", "==")?,
-            Op::NEQ => write!(f, "{}", "!=")?,
-            Op::GTR => write!(f, "{}", ">")?,
-            Op::LSS => write!(f, "{}", "<")?,
-            Op::GEQ => write!(f, "{}", ">=")?,
-            Op::LEQ => write!(f, "{}", "<=")?,
-            Op::NOT => write!(f, "{}", "!")?,
+            Op::Add => write!(f, "{}", "+")?,//
+            Op::Sub => write!(f, "{}", "-")?,//
+            Op::Mul => write!(f, "{}", "*")?,//
+            Op::Div => write!(f, "{}", "/")?, //
+            Op::And => write!(f, "{}", "&&")?, //
+            Op::Or => write!(f, "{}", "||")?, //
+            Op::Eq => write!(f, "{}", "==")?, //
+            Op::Neq => write!(f, "{}", "!=")?, //
+            Op::Gtr => write!(f, "{}", ">")?,//
+            Op::Lss => write!(f, "{}", "<")?,//
+            Op::Geq => write!(f, "{}", ">=")?,//
+            Op::Leq => write!(f, "{}", "<=")?,//
+            Op::Not => write!(f, "{}", "!")?,
         };
         Ok(())
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq, Clone)]
 pub enum Type {
-    Bool,
     I32,
+    Bool,
     Unit,
+    Ref(bool, Box<Type>), // mut/not, &
+    Str,
+
 }
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -67,108 +94,56 @@ impl fmt::Display for Type {
             Type::Bool => write!(f, "{}", "bool")?,
             Type::I32 => write!(f, "{}", "i32")?,
             Type::Unit => write!(f, "{}", "()")?,
+            Type::Ref(true,ref typ) => write!(f, "&mut {}", typ)?,
+            Type::Ref(false,ref typ) => write!(f, "&{}",typ)?,
+            Type::Str => write!(f, "{}", "String")?,
         };
         Ok(())
     }
 }
 
-#[derive(Debug)]
-pub enum AllCond {
-    If,
-    Else,
-    ElseIf,
-}
-
-impl fmt::Display for AllCond {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            AllCond::If => write!(f, "{}", "if")?,
-            AllCond::ElseIf => write!(f, "{}", "else if")?,
-            AllCond::Else => write!(f, "{}", "else")?
-        };
-        Ok(())
-    }
-}
-#[derive(Debug)]
-//ArgVariable(String, Type),
-pub enum ArgVariable {
-    Argument(String, Type),
-}
-impl fmt::Display for ArgVariable {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ArgVariable::Argument(id,typ) => write!(f, "{}:{}", id,typ)?,
-        }
-        Ok(())
-    }
-}
-//TEST
-#[derive(Debug)]
-pub enum Stmts {
-    MulStatement(Box<Statement>),
-}
-impl fmt::Display for Stmts {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Stmts::MulStatement(s) => write!(f, "{}",s)?,
-        }
-        Ok(())
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug,PartialEq, Clone)]
 pub enum Statement {
-    //  Name,   opt mutbool,    opt type,      opt expr,       opt type
-    Let(String, bool, Option<Type>, Option<Box<Expr>>,Option<Box<Statement>>),
-    //         expression
-    ReturnWith(Box<Expr>),
-    //            expression
-    ReturnWithout(Box<Expr>),
-    // if/else/elseif,  op expr,     statementblock,      op statement   
-    Cond(AllCond, Option<Box<Expr>>, Box<Statement>, Option<Box<Statement>>),
-    //     statement
-    Block(Vec<Box<Stmts>>), //Block(Vec<Box<Statement>>), EDITED
-    //    expr        statementblock
-    While(Box<Expr>, Box<Statement>), 
-    //      id        expr
-    Assign(String, Box<Expr>),
-    //       id       vector of arg        op ret type   stmt block
-    Function(String, Vec<Box<ArgVariable>>, Option<Type>, Box<Statement>),
-    // 
-    FunctionCall(String, Vec<Box<Exprs>>),
-    //
-    
-    
+    Let(bool, String, Option<Type>, Option<Box<Exprs>>), //
+    Cond(AllCond, Option<Box<Exprs>>, Box<Statement>, Option<Box<Statement>>), //
+    Block(Vec<Box<Statement>>, Option<Box<Statement>>),
+    While(Box<Exprs>, Box<Statement>), //
+    Assign(String, Box<Exprs>), //
+    Return(Box<Exprs>),
+    Exprs(Box<Exprs>), // TOAST: ADDED
+    Function(String, Vec<Box<Statement>>, Option<Type>, Box<Statement>), //
+    FuncArg(String, Type),
+    Program(Vec<Box<Statement>>),
 }
-
 impl fmt::Display for Statement { //Statement with optional
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Statement::Let(id, opmut,optype,opexpr,optype2) => {
-                write!(f, "let {} ", id)?;
-                if *opmut {
+            Statement::Let(m, id,optype,opexp) => {
+                write!(f, "let ")?;
+                if *m {
                     write!(f, "mut ")?;
                 }
+                write!(f, "{}", id)?;
                 if let Some(typ) = optype {
                     write!(f, ": {} ", typ)?;
                 }
-                if let Some(exp) = opexpr {
+                if let Some(exp) = opexp {
                     write!(f, "= {};", exp)?;
                 }
-                if let Some(typ) = optype2 {
-                    write!(f, "= {};", typ)?;
-                }
             }
-            Statement::ReturnWith(expr) => {
-                write!(f, "return {};", expr)?;
-            }
-            Statement::ReturnWithout(expr) => {
+            Statement::Return(expr) => {
                 write!(f, "{}", expr)?;
             }
-            Statement::Block(state)  => {
+            Statement::Block(state,r)  => {
                 write!(f, "{{\n")?;
-                for st in state.iter(){
-                    write!(f, "        {}\n", st)?;
+                for (i,stmt) in state.iter().enumerate(){
+                    write!(f, "        {}\n", stmt)?;
+                    if i <state.len()-1 {
+                        write!(f, ";\n")?;
+                    }
+                }
+                if let Some(ret) = r {
+                    write!(f, "{}",ret)?;
                 }
                 write!(f, "    }}")?;
             } 
@@ -186,7 +161,7 @@ impl fmt::Display for Statement { //Statement with optional
                 write!(f, "while {} {}", expr, block)?;
             }
             Statement::Assign(id,expr) => {
-                write!(f, "{} = {}", id, expr)?;
+                write!(f, "{} = {};", id, expr)?;
             }
             Statement::Function(id, arg,optyp,block) => {
                 write!(f, "fn {}(", id)?;
@@ -202,58 +177,41 @@ impl fmt::Display for Statement { //Statement with optional
                 }
                 write!(f, "{}", block)?;
             }
-            Statement::FunctionCall(id,vec) => {
-                write!(f, "{}", id)?;
-                for(i,a) in vec.iter().enumerate(){
-                    write!(f, "{}", a)?;
-                    if i < vec.len()-1 {
-                        write!(f, ", ")?;
-                    }
-                }
+            
+            Statement::FuncArg(id,typ) => {
+                write!(f, "{}:{}", id, typ)?;
+            }
+            Statement::Exprs(e) => { // TOAST: ADDED
+                write!(f, "{};", e)?;
+            }
+            Statement::Program(s_vec) => {
+                write!(f, "{:?}", s_vec)?;
             }
         };
         Ok(())
     }
 } 
-#[derive(Debug)]
-pub enum Exprs {
-    Expressions(Box<Expr>)
+
+#[derive(Debug,PartialEq, Clone, Copy)]
+pub enum AllCond {
+    If,
+    Else,
+    ElseIf,
 }
-impl fmt::Display for Exprs {
+impl fmt::Display for AllCond {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Exprs::Expressions(e) => write!(f, "{}", e)
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum Expr {
-    Number(i32),
-    Identifier(String),
-    Boolean(bool),
-    NotEx(Op, Box<Expr>),
-    FCall(Statement),
-    Op(Box<Expr>, Op, Box<Expr>),
-
-}
-impl fmt::Display for Expr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Expr::Number(i) => write!(f, "{}", i)?,
-            Expr::Identifier(s) => write!(f, "{}", s)?,
-            Expr::Boolean(b) => write!(f, "{}", b)?,
-            Expr::NotEx(not,exp) => write!(f, "{}{}",not,exp)?,
-            Expr::FCall(s) => write!(f,"{}", s)?,
-            Expr::Op(expr,op,expr2) => write!(f, "({} {} {})", expr, op, expr2)?,
-
+            AllCond::If => write!(f, "{}", "if")?,
+            AllCond::ElseIf => write!(f, "{}", "else if")?,
+            AllCond::Else => write!(f, "{}", "else")?
         };
         Ok(())
     }
-} 
+}
+#[derive(Debug)]
+pub enum Error {
 
-
-
+}
 
 
 
