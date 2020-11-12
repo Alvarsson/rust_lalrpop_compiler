@@ -7,7 +7,6 @@ use parser::*;
 pub mod ast;
 
 pub mod type_check;
-pub mod interp;
 pub mod interpreter;
 
 fn main() {
@@ -85,7 +84,7 @@ fn main() {
 
 }
 #[test]
-fn test_interp2() {
+fn test_interp_with_type_check() {
     
     let test_string = "
     fn main() -> () {
