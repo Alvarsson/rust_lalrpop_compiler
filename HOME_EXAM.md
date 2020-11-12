@@ -3,9 +3,9 @@
 - Fork this repo and put your answers (or links to answers) in THIS file.
 
 ## Your repo
+Branch: restart
 
 https://github.com/Alvarsson/rust_lalrpop_compiler/tree/restart
-Branch: restart
 
 ## Your syntax
 
