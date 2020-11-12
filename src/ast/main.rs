@@ -181,7 +181,7 @@ fn test_borrow_check() {
         }
     }
     ";
-    let borrow_test = StmtsParser::new().parse(test_string).unwrap();
+    let borrow_test = ProgramParser::new().parse(test_string).unwrap();
     let mut scope = type_check::Scope::newScope(test_string.to_string());
     let result = type_check::statement_check(vec![borrow_test], &mut scope);
     if result.is_err() {
@@ -280,7 +280,7 @@ fn test_type_check_part2() {
             b + 3
         }
     }";
-    let test = StmtsParser::new().parse(part2).unwrap();
+    let test = ProgramParser::new().parse(part2).unwrap();
     let mut scope = type_check::Scope::newScope(part2.to_string());
     let r = type_check::statement_check(vec![test], &mut scope);
     if r.is_err() {
