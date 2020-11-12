@@ -699,9 +699,13 @@ This code has gone through sevaral iterations with influence from other develope
     - Besides what is mentioned above, writing the EBNF of this report was very simple thanks to LALRPOP. And with the way LALRPOP tokenize input program, I could understand the AST connection better and in the end better see how the terminals are reached in a clear way. 
 
 - Identifier handling and symbol table organization. Type-checking, logical inference systems. [SOS is a logical inference system]
-    - 
-- Intermediate representations and transformations for different languages. [If you attended, Recall lectures relating LLVM/Crane-lift, discussions on SSA (Single Static Assignment) used in LLVM/Crane-lift, and discussions/examples on high [level optimization](https://gitlab.henriktjader.com/pln/d7050e_2020/-/tree/generics_and_traits/examples)]
-
-- Code optimization and register allocation. Machine code generation for common architectures. [Both LLVM/Crane-Lift does the "dirty work" of backend optimization/register allocation leveraging the SSA form of the LLVM-IR]
+    - For the type checker the major problem was figuring out how to start. That's not to say that it was easy after I completed the terminal type checking. I was constantly stopping and rethinking the checking method which, fortunately, led me to a better understanding. The more difficult part was of how to to implement the scope(environment) handler as to get borrowing correct.
+    - As for the SOS it was a very difficult area for me which in all honesty im not sure that I understand to its fullest even now. I tried to implement the SOS as correctly as I could in this report and I see how it is a good way to represent the language in a more formal and generic way.
+    - The interpreter was much easier to implement since it is grounded in the way that the type checker works with a few tweaks. First there was some problems in figuring out in what way I was to get the actual values evaluated, but I realized that expressions and its terminals could be utilized.
 
 Comment on additional things that you have experienced and learned throughout the course.
+
+This course may have overshot its actuall deadline but this doesn't bother me to much at this point. Since thinking back i've learned at a higher rate and much more than in previous courses and this time regarding a subject that I really feel is interesting.
+This has given an insight into the ins and outs of a real compiler and im not a stranger to working on this in the future.
+The amount of paper i spent on drawing out a solid plan for the scope handler is amazing. The end product and how it works with borrowing is really worth it.
+Last but not least, RUST. At first glance it seemed like nothing worth noticing, but the more I learned about how much though has been put into this language, the more i liked it. Im really excited to work with RUST in the future and will more than likely use it for my own projects.
