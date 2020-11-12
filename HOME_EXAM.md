@@ -692,11 +692,11 @@ This code has gone through sevaral iterations with influence from other develope
 
 ## Overall course goals and learning outcomes.
 
-Comment on the alignment of the concrete course goals (taken from the course description) to the theory presented, work You have done and knowledge You have gained. (I have put some comments in [...]).
-
 - Lexical analysis, syntax analysis, and translation into abstract syntax.
-    - 
+    - LALRPOP is a Rust parser generator framework which greatly simplified the lexican and syntax analysis. With it, writing DRY grammar was much easier to understand, especially with the abstract syntax tree implementation. When starting there immediately was a speed bump in understanding how tokenizing worked and how it handled styntax precedence. The AST seemed much simpler to grasp than the impementation itself since all of my LALRPOP lexical versions was re-done because of ambiguity errors which only was solvable by re-doing the entire structure.
+    
 - Regular expressions and grammars, context-free languages and grammars, lexer and parser generators. [lalr-pop is a classical parser generator, it auto generated the lexer for you based on regular expressions but allows for you to define the lexer yourself for more control]
+    - Besides what is mentioned above, writing the EBNF of this report was very simple thanks to LALRPOP. And with the way LALRPOP tokenize input program, I could understand the AST connection better and in the end better see how the terminals are reached in a clear way. 
 
 - Identifier handling and symbol table organization. Type-checking, logical inference systems. [SOS is a logical inference system]
     - 
