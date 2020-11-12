@@ -5,6 +5,7 @@ lalrpop_mod!(pub parser, "/ast/parser.rs");
 use parser::*;
 
 pub mod ast;
+
 pub mod type_check;
 pub mod interp;
 pub mod interpreter;
@@ -46,6 +47,7 @@ fn main() {
         }
     
         // a function taking two bool arguments returning the i32 type
+
         // with some let statements and function calls
         fn b(x: bool, y: bool) -> i32 {
             let a: bool = a(x, y || false);
@@ -381,3 +383,4 @@ fn parse_test() {
     ";
     println!("{:?}", ProgramParser::new().parse(test_string));
 }
+

@@ -3,8 +3,8 @@
 - Fork this repo and put your answers (or links to answers) in THIS file.
 
 ## Your repo
-Branch: restart
 
+Branch: restart
 https://github.com/Alvarsson/rust_lalrpop_compiler/tree/restart
 
 ## Your syntax
@@ -297,6 +297,7 @@ Future implementations:
 - For your implementation, give a program (or set of test programs) that cover all the semantics of your language that you have successfully implemented. (Maybe a subset of the input language accepted by the grammar.)
 
 - Compare your solution to the requirements (as stated in the README.md). What are your contributions to the implementation.
+
 
 ### My semantics
 The granularity of the SOS is in small-step, this allows for reduction for each step. 
@@ -709,3 +710,4 @@ This course may have overshot its actuall deadline but this doesn't bother me to
 This has given an insight into the ins and outs of a real compiler and im not a stranger to working on this in the future.
 The amount of paper i spent on drawing out a solid plan for the scope handler is amazing. The end product and how it works with borrowing is really worth it.
 Last but not least, RUST. At first glance it seemed like nothing worth noticing, but the more I learned about how much though has been put into this language, the more i liked it. Im really excited to work with RUST in the future and will more than likely use it for my own projects.
+

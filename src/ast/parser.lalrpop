@@ -105,7 +105,9 @@ pub Term: Box<Exprs> = {
     "(" <Exprs> ")",
 };
 
+
 //----Operands----
+
 
 NotOp: Op = {
     "!" => Op::Not,
@@ -230,3 +232,4 @@ CallMacro = FuncArgSep<Exprs>;
 pub Program: Box<Statement> = {
     <stmt:Stmt+> => Box::new(Statement::Program(stmt)) 
 }
+
