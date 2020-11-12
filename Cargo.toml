@@ -1,0 +1,25 @@
+[package]
+name = "d7050e_2020"
+version = "0.1.0"
+authors = ["Per Lindgren <per.lindgren@ltu.se>"]
+edition = "2018"
+
+build = "build.rs" # LALRPOP preprocessing
+
+[build-dependencies.lalrpop] 
+version = "0.19.0"
+features = ["lexer"]
+
+[dependencies]
+lalrpop-util = "0.19.0"
+regex = "1.3.9"
+
+# lalrpop = {version = "0.19.0", features = ["lexer"] }
+
+[[bin]]
+name = "minimal"
+path = "src/minimal/main.rs"
+
+[[bin]]
+name = "ast"
+path = "src/ast/main.rs"
