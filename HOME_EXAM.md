@@ -4,7 +4,7 @@
 
 ## Your repo
 
-Branch: restart
+Branch: master
 https://github.com/Alvarsson/rust_lalrpop_compiler/tree/restart
 
 ## Your syntax
