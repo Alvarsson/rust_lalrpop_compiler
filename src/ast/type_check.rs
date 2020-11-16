@@ -1,18 +1,9 @@
 
 use std::collections::HashMap;
-//use std::any::type_name;
 
 use crate::ast::*;
-//TODO: Fix check for Id in expr_check.
-//TODO: I'll need something, maybe a struct, for scope handling!
-//      Hashmaps is recommended so go with that. Maybe maps x2?
 
 type Error = String;
-
-// fn type_of<T>(_: T) -> &'static str {
-//     type_name::<T>()
-// }
-
 
 fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
     match *expr {
@@ -139,7 +130,7 @@ fn expr_check(expr: Box<Exprs>, scope: &mut Scope) -> Result<Type, Error> {
             }
         },
         Exprs::DeRef(exp) => {
-            if let Exprs::Id(id) = * exp {
+            if let Exprs::Id(id) = *exp {
                 let ret = scope.get_symbol(&id); // symbol scope check
                 if ret.is_err() {
                     let ret_err = ret.unwrap_err();
@@ -300,7 +291,7 @@ pub fn statement_check(stmts: Vec<Box<Statement>>, scope: &mut Scope) -> Result<
                 let s_assign = scope.get_symbol(&id);
                 if s_assign.is_err() {
                     s_assign
-                } // cant one-line since it will panic at err.
+                } 
                 else {
                     let s2_assign = expr_check(ex, scope);
                     if s2_assign.is_err() {
@@ -549,7 +540,7 @@ impl Scope {
     }
 
     fn get_symbol(&mut self, id: &String) -> Result<Type, Error> { //Check variable in scope.
-        let mut currentSymbol = self.scope_layer;
+        let mut currentSymbol = self.scope_layer; 
         let func_scope = *self.func_scope.last().unwrap();
         while currentSymbol >= func_scope{
             let scope_layer = self.symbolTable.get(&currentSymbol).unwrap();
@@ -581,10 +572,9 @@ impl Scope {
         Err(format!("Function, {}({:?}) not in correct scope layer", id, args))
     }
 
-    //TODO: Comment this for user understanding.
     fn borrow_symb(&mut self, id: &String, mutable: bool) -> Result<Type, Error> {
-        let mut current_scope = self.scope_layer;
-        let func_scope = *self.func_scope.last().unwrap(); // get the func scope value
+        let mut current_scope = self.scope_layer; // current scope layer
+        let func_scope = *self.func_scope.last().unwrap(); // current function scope layer
         while current_scope >= func_scope {
             let mut scope_layer = self.symbolTable.get_mut(&current_scope).unwrap();
             if scope_layer.contains_key(id) {
@@ -599,7 +589,7 @@ impl Scope {
                     return Err(format!("{}, not declared mutable thus cant be borrowed as mutable", id))
                 }
                 let mut symbol_type = symb.symbolbase.clone();
-                if let Type::Ref(ref_mut,typ) = symbol_type {
+                if let Type::Ref(ref_mut,typ) = symbol_type { // check if is a reference but and mutable.
                     if mutable && !ref_mut {
                         return Err(format!("{}'s value can't be borrowed as mutable", id))
                     }
