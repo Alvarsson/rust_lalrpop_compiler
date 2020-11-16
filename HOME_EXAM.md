@@ -4,8 +4,8 @@
 
 ## Your repo
 
-Branch: restart
-https://github.com/Alvarsson/rust_lalrpop_compiler/tree/restart
+Branch: master
+https://github.com/Alvarsson/rust_lalrpop_compiler
 
 ## Your syntax
 
@@ -634,57 +634,93 @@ let x : i32 = true;
 
 ### Well formed borrows
 
-Well formed borrows follows the general syntax that Rust implements. Some examples are:
+All the examples below are testable in the the main.rs file in the ast folder and passes the borrow check built into the type_checker.
 
-example Good borrows, borrow-mut and dereference:
+Larger example which covers most parts, this is testable by running the function "test_borrow_check" in the main.rs file.
 ```rust
-fn borrow_function() {
-    let b = 'test';
-    let c= &b;
-}
-fn borrow_mut_function() {
-    let mut b = 'test':
-    let mut c = &mut b;
-}
-fn deref_function(b: &i32) {
-    return *b + 4;
-}
+fn test() {
+        fn test1(p: &String)  {
+            let b = *p;
+        }
+        fn test2(a: &mut String) {
+            let mut b = 'oj';
+            let mut e = &mut b;
+            test1(&b)  
+        }
+        fn test3(b: &i32) -> i32 {
+            return *b + 4;
+        }
+    }
+```
+
+The example below show that we can have any number of references to a variable, as long as the variable is immutable.
+```rust
+fn test() {
+        fn test1()  {
+            let b = 10;
+            let c = &b;
+            let d = &b;
+        }
+    }
+```
+
+The example below shows that variable scope handling is correct, you can borrow from the scope layer below. 
+In the "Ill formed borrows" section below, an example shows that values are correctly dropped when leaving scope.
+```rust
+fn test() {
+        fn test1()  {
+            let a = 5;
+            if true {
+                let b = &a;
+                let c = 89;
+            }
+        }
+    }
 ```
 
 ### Ill formed borrows
 
-Can only borrow a variable.
+All of these examples are testable in the main.rs file in the ast folder. The borrow checking will detect and reject the examples explained below.
 
-example Ill formed borrows:
+In accordance to Rust rules of reference the borrow checker catches a case where one tries to have more than one mutable reference.
+This example below returns the following: "Error: b, is already borrowed as mutable".
+example: More than one mutable reference.
 ```rust
 fn test() {
-    let s = &'hej';
-} 
+        fn test1()  {
+            let mut b = 10;
+            let c = &mut b;
+            let d = &mut b;
+        }   
+    }
 ```
 
-Can't borrow as mutable since s is not declared as mutable.
-
-example Ill formed mutable borrows:
+This example simply shows that the borrow checker detects that a value has been dropped out of the scope and thus "c" can'b be borrowed.
 ```rust
 fn test() {
-    let s = 'hej';
-    let b = &mut s;
-} 
+        fn test1()  {
+            let a = 5;
+            if true {
+                let b = &a;
+                let c = 89;
+            }
+            let d = &c;
+        }
+    }
 ```
 
-Can't dereference variable that isn't a reference.
-
-example Ill formed dereference:
+The example below shows that a variable already borrowed as immutable can't later be borrowed as mutable. 
 ```rust
 fn test() {
-    let s = 'hej';
-    let b = *s;
-} 
+        let mut s = 50;
+        let r1 = &s;
+        let r2 = &s;
+        let r3 = &mut s;
+    }
 ```
 
-The examples above demonstrates a general type of ill formed borrowing and dereferencing that the borrow checker detects and reject.
 
-The borrow checker, just as with the type checker and interpreter, is included in scope layer handling. That meaning that regular variables and values are scope layer specific
+The borrow checker, just as with the type checker and interpreter, is included in scope layer handling and the code. The examples above are testable via the main.rs file .
 With referencing variables we can borrow values in different scopes without affecting the original variable value.
 
 ## Contribution summary
