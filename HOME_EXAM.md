@@ -321,7 +321,7 @@ Expressions can be the following:
 - fc ∈ FunctionCall 
 
 ### Let command
-![](../restart/images/letimg.png)
+![](../master/images/letimg.png)
 
 examples:
 ```rust
