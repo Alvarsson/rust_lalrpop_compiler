@@ -432,7 +432,7 @@ x = 5;
 x = b;
 ```
 
-## Command usage example
+### Command usage example
 ```rust
 fn main() {
     fn test(a: i32) {
@@ -576,7 +576,7 @@ x = 5 + 5;
 
 the a1:i32 in the example below is refered to the parameter 1 type or p1t. And so on for the function parameters.
 
-examples:
+example:
 ```rust
 fn (a1:i32, b:&mut i32){
     ...
@@ -588,6 +588,35 @@ fn (a1:i32, b:&mut i32){
 The function return type is held in the scope(environment) as to check that the correct block/layer returns the asked for type.
 
 The type checker evaluates for each practical requirement in the course, as well as with borrowing references.
+
+### Command usage example
+```rust
+fn main() {
+    fn test(a: i32) {
+        let mut b = 6;
+        b = 2+a; // Using the assign command here where the variable needs to be of correct type and will evaluate as unit.
+    }
+    test(5);
+    fn test2(per: &i32) -> i32 {
+        let axel: i32 = 10 + 2 * 3; // Using the let command here where the expression evaluates to the type. This also show an arithmetic expression operation for type.
+        axel = -1 - (1 - 1);
+        return axel + per; // The return command is shown in use at this line. The expression evaluates to a type in the derived state.
+    }
+    fn test3(foo: bool) -> bool { // This shows the function command with an example argument as parameter which block evaluate to function return type.
+        if foo && true || false { // This showcases the conditional command with the commands for the evaluated boolean types.
+            let a = test2(5);
+            while ( a < 10) { // The while command is used here, evaluating to true leads with the command as unit.
+                a = a + 1;
+            } else {
+            return true;
+            }
+        }
+        return 5 > 7;
+    }
+}
+main();
+```
+
 
 ### Illegal examples and why
 
