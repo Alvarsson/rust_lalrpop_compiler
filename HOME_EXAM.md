@@ -300,7 +300,7 @@ Future implementations:
 
 
 ### My semantics
-The granularity of the SOS is in small-step, this allows for reduction for each step. 
+The granularity of the SOS is generally in big-step. 
 A transition rule is written as:
 
 ![](../master/images/transRule.png)
