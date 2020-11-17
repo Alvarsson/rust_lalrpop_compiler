@@ -320,7 +320,7 @@ Expressions can be the following:
 - st ∈ Str
 - fc ∈ FunctionCall 
 
-### Let sequence
+### Let command
 ![](../restart/images/letimg.png)
 
 examples:
@@ -362,7 +362,7 @@ examples:
  2 == 2;
  b != 9;
 ```
-### General command sequence
+### General command
 ![](../restart/images/cmdSeq.png)
 
 Close to the let statement semantic, executing the first, then the second command as to not loose the intermediate derived state.
@@ -372,10 +372,15 @@ examples:
 let x = 9;
 func();
 ```
-### Function sequence
-Basic function sequence from one state to derived state in the context of the called function.
+### Function command
 
-![](../restart/images/funcSeq.png)
+This explains the function parameters semantics.
+
+![](../restart/images/func1.png)
+
+With the function paramater semantic we can further explain the full function command as,
+
+![](../restart/images/func2.png)
 
 examples:
 ```rust
@@ -451,11 +456,11 @@ The types defined as possible returns are:
 - i32
 - unit -> "()"
 
-### Let sequence
+### Let command 
 
 Let statements in the type checker is divided into type i32 and type bool.
 
-Type i32, carrying the type with the state:
+We generalize the result to type, t. This includes borth i32 and bool.
 
 ![](../restart/images/typeLeti.png).
 
@@ -464,8 +469,6 @@ example:
 let x : i32 = 5; 
 let x = b; // given that b must be of type i32.
 ```
-
-Type bool does the same and carries the type bool with the state:
 
 example:
 ```rust
@@ -494,7 +497,7 @@ example:
 8 == 8;
 ```
 
-### Conditional statements
+### Conditionals
 
 The conditional statements are the same for both true and false regarding the semantics.
 
@@ -526,7 +529,7 @@ while 5 > i {
 
 The return statements for either type i32 or bool has the same semantics but obviously resulting in different types.
 
-Their semantics are the following but foor bool we switch the i32 to bool.
+Their semantics are the following.
 
 ![](../restart/images/typeRet.png).
 
@@ -542,29 +545,24 @@ As the previous statement semantics the assign types have the same semantic form
 
 ![](../restart/images/typeAss.png).
 
-The conclusion will be that the state carries the variable type.
-
 examples:
 ```rust
 x = true;
 x = 5 + 5;
 ```
 
-### Unit type 
+### Function command
 
-The default return type of function is unit.
-
-![](../restart/images/typeUnit.png).
+the a1:i32 in the example below is refered to the parameter 1 type or p1t. And so on for the function parameters.
 
 examples:
 ```rust
-fn main() -> () {
-    func();
-}
-fn main() { // default to return unit
+fn (a1:i32, b:&mut i32){
     ...
 }
 ```
+
+![](../restart/images/typeFunc.png).
 
 The function return type is held in the scope(environment) as to check that the correct block/layer returns the asked for type.
 
