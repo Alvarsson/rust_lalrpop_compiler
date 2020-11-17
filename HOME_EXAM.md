@@ -376,7 +376,7 @@ func();
 
 This explains the function parameters semantics.
 
-![](../restart/images/func1.png)
+![](../master/images/func1.png)
 
 With the function paramater semantic we can further explain the full function command as,
 
