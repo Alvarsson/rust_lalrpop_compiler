@@ -421,12 +421,6 @@ Explicit return has the semantic,
 
 which brings the return expression with the state.
 
-Implicit return has the semantic,
-
-![](../master/images/retI.png),
-
-but this does not carry the expression with the state.
-
 ### Assign statement
 Since the variable has no state change and only moves the expression with the state we get conclusion,
 
