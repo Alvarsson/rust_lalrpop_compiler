@@ -432,6 +432,33 @@ x = 5;
 x = b;
 ```
 
+## Command usage example
+```rust
+fn main() {
+    fn test(a: i32) {
+        let mut b = 6;
+        b = 2+a; // Using the assign command here.
+    }
+    test(5);
+    fn test2(per: &i32) -> i32 {
+        let axel: i32 = 10 + 2 * 3; // Using the let command here where the expression evaluates to the value. This also show an arithmetic expression operation.
+        axel = -1 - (1 - 1);
+        return axel + per; // The return command is shown in use at this line. The expression evaluates and is returned in a derived state.
+    }
+    fn test3(foo: bool) -> bool { // This shows the function command with an example argument as parameter.
+        if foo && true || false { // This showcases the conditional command evaluating a boolean. Also shows boolean operation.
+            let a = test2(5);
+            while ( a < 10) { // The while command is used here, evaluating to true leads to the assign command in the block.
+                a = a + 1;
+            }
+            return true;
+        }
+        return 5 > 7;
+    }
+}
+main();
+```
+
 ## Your type checker
 
 - Give a simplified set of Type Checking Rules for your language (those rules look very much like the SOS rules, but over types not values). Also here you don't need to detail rules that are similar (follow the same pattern).
