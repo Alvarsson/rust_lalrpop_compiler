@@ -303,7 +303,7 @@ Future implementations:
 The granularity of the SOS is in small-step, this allows for reduction for each step. 
 A transition rule is written as:
 
-![](../restart/images/transRule.png)
+![](../master/images/transRule.png)
 
 Using the following symbols to describe the Structural Operational Semantics:
 - e ∈ expression
@@ -338,7 +338,7 @@ The choice of arithmetic operands are
 - "*", multiplication
 - "/", division
 
-![](../restart/images/ariOp.png)
+![](../master/images/ariOp.png)
 
 examples:
 ```rust
@@ -354,7 +354,7 @@ The choice of arithmetic operands are
 - ">=", larger or equal to
 - "<=", smaller or equal to 
 
-![](../restart/images/boolOp.png)
+![](../master/images/boolOp.png)
 
 examples:
 ```rust
@@ -363,7 +363,7 @@ examples:
  b != 9;
 ```
 ### General command
-![](../restart/images/cmdSeq.png)
+![](../master/images/cmdSeq.png)
 
 Close to the let statement semantic, executing the first, then the second command as to not loose the intermediate derived state.
 
@@ -380,7 +380,7 @@ This explains the function parameters semantics.
 
 With the function paramater semantic we can further explain the full function command as,
 
-![](../restart/images/func2.png)
+![](../master/images/func2.png)
 
 examples:
 ```rust
@@ -389,9 +389,9 @@ fn main() {
 }
 ```
 ### Conditionals true and false
-![](../restart/images/condT.png);
+![](../master/images/condT.png);
 
-![](../restart/images/condF.png)
+![](../master/images/condF.png)
 
 example:
 ```rust
@@ -402,11 +402,11 @@ if a > 6 {
 ### While-loop
 For while-false exiting with same state.
 
-![](../restart/images/whileF.png);
+![](../master/images/whileF.png);
 
 And for while-true, concluding in derived state since block code executes.
 
-![](../restart/images/whileT.png);
+![](../master/images/whileT.png);
 
 example:
 ```rust
@@ -417,20 +417,20 @@ while a > 6 {
 ### Return statement
 Explicit return has the semantic,
 
-![](../restart/images/retE.png),
+![](../master/images/retE.png),
 
 which brings the return expression with the state.
 
 Implicit return has the semantic,
 
-![](../restart/images/retI.png),
+![](../master/images/retI.png),
 
 but this does not carry the expression with the state.
 
 ### Assign statement
 Since the variable has no state change and only moves the expression with the state we get conclusion,
 
-![](../restart/images/ass.png)
+![](../master/images/ass.png)
 
 example:
 ```rust
@@ -462,7 +462,7 @@ Let statements in the type checker is divided into type i32 and type bool.
 
 We generalize the result to type, t. This includes borth i32 and bool.
 
-![](../restart/images/typeLeti.png).
+![](../master/images/typeLeti.png).
 
 example:
 ```rust
@@ -480,7 +480,7 @@ let x = b; // given that b must be of type bool.
 
 Obviously these must evaluate to type i32 and the same operands is in play as the arithmetic operands.
 
-![](../restart/images/typeIop.png).
+![](../master/images/typeIop.png).
 
 example:
 ```rust
@@ -501,7 +501,7 @@ example:
 
 The conditional statements are the same for both true and false regarding the semantics.
 
-![](../restart/images/typeIf.png).
+![](../master/images/typeIf.png).
 
 example:
 ```rust
@@ -514,7 +514,7 @@ if true {
 
 Just like the conditionals, while statement semtantics are the same for both true and false.
 
-![](../restart/images/typeWhile.png).
+![](../master/images/typeWhile.png).
 
 The derived state will be evaluated as long as condition is of type boolean.
 
@@ -531,7 +531,7 @@ The return statements for either type i32 or bool has the same semantics but obv
 
 Their semantics are the following.
 
-![](../restart/images/typeRet.png).
+![](../master/images/typeRet.png).
 
 examples:
 ```rust
@@ -543,7 +543,7 @@ return false;
 
 As the previous statement semantics the assign types have the same semantic form.
 
-![](../restart/images/typeAss.png).
+![](../master/images/typeAss.png).
 
 examples:
 ```rust
@@ -562,7 +562,7 @@ fn (a1:i32, b:&mut i32){
 }
 ```
 
-![](../restart/images/typeFunc.png).
+![](../master/images/typeFunc.png).
 
 The function return type is held in the scope(environment) as to check that the correct block/layer returns the asked for type.
 
